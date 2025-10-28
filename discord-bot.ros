@@ -1,0 +1,28 @@
+#!/bin/sh
+#|-*- mode:lisp -*-|#
+#|
+exec ros -Q -- $0 "$@"
+|#
+(progn ;;init forms
+  (ros:ensure-asdf)
+  #+quicklisp(ql:quickload '("discord-bot") :silent t)
+  )
+
+(defpackage :ros.script.discord-bot.3968237277
+	    (:use #:cl #:discord-bot-main))
+(in-package :ros.script.discord-bot.3968237277)
+
+(defun main ()
+  (start))
+
+;;; vim: set ft=lisp lisp:
+
+
+
+
+
+
+
+
+
+
