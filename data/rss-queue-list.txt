@@ -89,4 +89,5 @@
  "http://scp-jp.wikidot.com/scp-3358-jp"
  "http://scp-jp-sandbox3.wikidot.com/draft:6538508-223-0f0f"
  "http://scp-jp.wikidot.com/scp-cn-3482"
+ "http://scp-jp.wikidot.com/scp-cn-3482"
  "http://scp-jp.wikidot.com/scp-cn-3482")
