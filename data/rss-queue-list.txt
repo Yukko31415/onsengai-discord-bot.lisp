@@ -1,9 +1,4 @@
-("http://scp-jp.wikidot.com/new-york-minute-hub"
- "http://scp-jp-sandbox3.wikidot.com/draft:9042763-57-b7ac"
- "http://scp-jp.wikidot.com/scp-3567-jp"
- "http://scp-jp.wikidot.com/scp-series-10"
- "http://scp-jp.wikidot.com/you-are-lucky"
- "http://scp-jp.wikidot.com/scp-3677-jp" "http://scp-jp.wikidot.com/scp-9790"
+("http://scp-jp.wikidot.com/scp-3677-jp" "http://scp-jp.wikidot.com/scp-9790"
  "http://scp-jp-sandbox3.wikidot.com/draft:1703549-46-83ea"
  "http://scp-jp-sandbox3.wikidot.com/draft:7989078-23-528c"
  "http://scp-jp-sandbox3.wikidot.com/draft:7535620-51-e46f"
@@ -89,5 +84,8 @@
  "http://scp-jp.wikidot.com/scp-3358-jp"
  "http://scp-jp-sandbox3.wikidot.com/draft:6538508-223-0f0f"
  "http://scp-jp.wikidot.com/scp-cn-3482"
- "http://scp-jp.wikidot.com/scp-cn-3482"
- "http://scp-jp.wikidot.com/scp-cn-3482")
+ "http://scp-jp.wikidot.com/scp-cn-3482" "http://scp-jp.wikidot.com/scp-3843"
+ "http://scp-jp-sandbox3.wikidot.com/draft:9042763-57-b7ac"
+ "http://scp-jp-sandbox3.wikidot.com/draft:biribi-1"
+ "http://scp-jp.wikidot.com/scp-001-int"
+ "http://scp-jp.wikidot.com/scp-001-int")
