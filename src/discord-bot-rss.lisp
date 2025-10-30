@@ -6,25 +6,23 @@
 ;;;; rss-bot-commands ---------------------------------------------
 
 
-
-(defmethod bot-command ((key (eql :rss-post)) (object cons))
+(defcommand :rss-post (object cons)
 	   (dolist (i object)
 	     (bot-command key i)))
 
-(defmethod bot-command ((key (eql :rss-post)) (object sandbox))
+(defcommand :rss-post (object sandbox)
 	   (check-rss-feeds
 	    (sandbox-link object)
 	    (sandbox-color object)
 	    (sandbox-icon object)))
 
-(defmethod bot-command ((key (eql :rss-post)) (object wikidot-jp))
+(defcommand :rss-post (object wikidot-jp)
 	   (check-rss-feeds
 	    (wikidot-jp-link object)
 	    (wikidot-jp-color object)
 	    (wikidot-jp-icon object)))
 
-
-(defmethod bot-command ((key (eql :save-rss-queue)) arg)
+(defcommand :save-rss-queue arg
   (output-key-plist-to-data *key-queue*))
 
 
