@@ -10,7 +10,7 @@
 (defpackage #:discord-bot-define-generic
   (:use #:cl)
 
-  (:export #:bot-command))
+  (:export #:run-command))
 
 
 
@@ -25,7 +25,8 @@
 
   (:export #:*bot-token*
 	   #:*seen-items*
-	   #:*key-queue*))
+	   #:*key-queue*
+	   #:initialize))
 
 
 ;;;; --------------------------------------------------------------
@@ -47,19 +48,6 @@
 
 
 ;;;; --------------------------------------------------------------
-;;;; コマンド管理  ------------------------------------------------
-
-
-(defpackage #:discord-bot-command-handler
-  (:use #:cl
-	#:lparallel.queue)
-
-  (:export #:add-command
-	   #:clear-command
-	   #:get-command))
-
-
-;;;; --------------------------------------------------------------
 ;;;; rss処理  -----------------------------------------------------
 
 
@@ -74,7 +62,7 @@
   (:import-from #:discord-bot-command-handler
 		#:add-command)
 
-  (:export #:start-rss-bot))
+  (:export #:run-rss-bot))
 
 
 ;;;; --------------------------------------------------------------
@@ -85,6 +73,7 @@
   (:use #:cl
 	#:slynk
 	#:bordeaux-threads
+	#:discord-bot-preloads
 	#:discord-bot-command-handler
 	#:discord-bot-rss
 	#:discord-bot-define-generic)

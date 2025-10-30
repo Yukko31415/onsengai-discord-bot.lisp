@@ -13,19 +13,40 @@
 ;;;; main-command -------------------------------------------------
 
 
+(defmacro defcommand (command arg-let &body body)
+  (let ((key (gensym)))
+    `(defmethod bot-command ((,key (eql ,command)) ,arg-let)
+       ,@body)))
 
-(defmethod bot-command ((key (eql :sleep)) arg)
+
+(defun make-command-list (lst)
+  (cons 'list (mapcar #'(lambda (arg)
+			  (if (listp arg)
+			      (make-command-list arg)
+			      (identity arg)))
+		      lst)))
+
+(defmacro run-command (list)
+  (let ((command (car list))
+	(arg  (make-command-list (cdr list))))
+    `(bt:make-thread
+      #'(lambda () (bot-command ,command ,arg)))
+    ))
+
+
+
+(defcommand :sleep arg
   (progn (format t "sleep ~a~%" (car arg))
 	 (sleep (car arg))))
 
-(defmethod bot-command ((key (eql :command-list)) arg)
+(defcommand :command-list arg
   (dolist (i arg)
     (let ((command (car i))
 	  (arg (cdr i)))
       (bot-command command arg))))
 
 
-(defmethod bot-command ((key (eql :command-dotimes)) arg)
+(defcommand :command-dotimes arg
   (let ((dotime (car arg))
 	(command-list (cdr arg)))
     (dotimes (i dotime)
@@ -37,7 +58,7 @@
 (defun make-loop-list (list)
   (setf (cdr (last list)) list))
 
-(defmethod bot-command ((key (eql :loop-command)) arg)
+(defcommand :loop-command arg
   (let ((looped-command-list (make-loop-list arg)))
     (bot-command :command-list looped-command-list)))
 
