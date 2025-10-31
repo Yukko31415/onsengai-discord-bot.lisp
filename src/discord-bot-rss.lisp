@@ -31,7 +31,7 @@
 ;;;; ------------------------------------------------------------------
 
 
-(defvar *channel-id* "1121439803213365279" "投稿先のDiscordチャンネルID")
+(defparameter *channel-id* "1121439803213365279" "投稿先のDiscordチャンネルID")
 
 
 (defvar *check-interval* 300 "RSSフィードのチェック間隔（秒）")
@@ -43,7 +43,8 @@
 ;; データを何個まで保持するかの上限
 
 
-(defvar *max-items* 100)
+(defparameter *max-items* 100)
+
 (defparameter *sandbox-rss-link*
   (make-instance 'sandbox
 		 :link "http://scp-jp-sandbox3.wikidot.com/feed/pages/tags/%2B_criticism-in/category/draft/order/updated_at%20.xml"))
