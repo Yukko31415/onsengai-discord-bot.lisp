@@ -12,15 +12,15 @@
 
 (defcommand :rss-post (object sandbox)
 	   (check-rss-feeds
-	    (sandbox-link object)
-	    (sandbox-color object)
-	    (sandbox-icon object)))
+	    (link object)
+	    (color object)
+	    (icon object)))
 
 (defcommand :rss-post (object wikidot-jp)
 	   (check-rss-feeds
-	    (wikidot-jp-link object)
-	    (wikidot-jp-color object)
-	    (wikidot-jp-icon object)))
+	    (link object)
+	    (color object)
+	    (icon object)))
 
 (defcommand :save-rss-queue arg
   (output-key-plist-to-data *key-queue*))

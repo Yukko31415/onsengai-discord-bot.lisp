@@ -7,23 +7,24 @@
 
 
 
-(defclass sandbox ()
+(defclass article ()
   ((link
-    :initarg :link :accessor sandbox-link)
+    :initarg :link :accessor link)
    (color
-    :initarg :color :accessor sandbox-color
+    :initarg :color :accessor color)
+   (icon
+    :initarg :icon :accessor icon)))
+
+
+(defclass sandbox (article)
+  ((color
     :initform 49408)
    (icon
-    :initarg :icon :accessor sandbox-icon
     :initform "<:SB:1088712219656728657>")))
 
 
-(defclass wikidot-jp ()
-  ((link
-    :initarg :link :accessor wikidot-jp-link)
-   (color
-    :initarg :color :accessor wikidot-jp-color
+(defclass wikidot-jp (article)
+  ((color
     :initform 15007744)
    (icon
-    :initarg :icon :accessor wikidot-jp-icon
     :initform "<:Pos:1088712480865394700>")))
