@@ -14,20 +14,6 @@
 
 
 
-;;;; --------------------------------------------------------------
-;;;; 環境変数定義  ------------------------------------------------
-
-
-(defpackage #:discord-bot-preloads
-  (:use #:cl
-	#:lparallel.queue
-	#:discord-bot-define-generic)
-
-  (:export #:*bot-token*
-	   #:*seen-items*
-	   #:*key-queue*
-	   #:initialize))
-
 
 ;;;; --------------------------------------------------------------
 ;;;; クラス定義  --------------------------------------------------
@@ -55,7 +41,6 @@
   (:use #:cl
 	#:bordeaux-threads
 	#:lparallel.queue
-	#:discord-bot-preloads
 	#:discord-bot-define-generic
 	#:discord-bot-define-class)
 
@@ -73,7 +58,6 @@
   (:use #:cl
 	#:slynk
 	#:bordeaux-threads
-	#:discord-bot-preloads
 	#:discord-bot-command-handler
 	#:discord-bot-rss
 	#:discord-bot-define-generic)

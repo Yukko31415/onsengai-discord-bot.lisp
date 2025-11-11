@@ -8,8 +8,9 @@ exec ros -Q -- $0 "$@"
   #+quicklisp(ql:quickload '("discord-bot") :silent t)
   )
 
+
 (defpackage :ros.script.discord-bot.3968237277
-	    (:use #:cl #:discord-bot-main))
+  (:use #:cl #:discord-bot-main))
 (in-package :ros.script.discord-bot.3968237277)
 
 (defun main ()
