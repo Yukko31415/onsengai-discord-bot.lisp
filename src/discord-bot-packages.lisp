@@ -58,7 +58,6 @@
   (:use #:cl
 	#:slynk
 	#:bordeaux-threads
-	#:discord-bot-command-handler
 	#:discord-bot-rss
 	#:discord-bot-define-generic)
 

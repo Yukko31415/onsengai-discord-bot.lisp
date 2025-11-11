@@ -5,7 +5,7 @@
 ;;;; --------------------------------------------------------------
 ;;;; generic関数の定義 --------------------------------------------
 
-(defgeneric bot-command (key arg))
+(defgeneric bot-command (bot-type command arg))
 
 ;;;; --------------------------------------------------------------
 ;;;; main-command -------------------------------------------------
@@ -26,40 +26,39 @@
 		      lst)))
 
 (defmacro run-command (list)
-  (let ((command (car list))
-	(arg  (make-command-list (cdr list))))
+  (let ((bot-type (first list))
+	(command (second list))
+	(arg (make-command-list (cddr list))))
     `(bt:make-thread
-      #'(lambda () (bot-command ,command ,arg)))
-    ))
+      #'(lambda () (bot-command ,bot-type ,command ,arg)))))
 
 
 
-(defcommand :sleep arg
+(defcommand :main :sleep arg
   (progn (format t "sleep ~a~%" (car arg))
 	 (sleep (car arg))))
 
-(defcommand :command-list arg
+(defcommand :main :command-list arg
   (dolist (i arg)
-    (let ((command (car i))
+    (let ((bot-type (first i))
+	  (command (second i))
 	  (arg (cdr i)))
-      (bot-command command arg))))
+      (bot-command bot-type command arg))))
 
 
-(defcommand :command-dotimes arg
+(defcommand :main :command-dotimes arg
   (let ((dotime (car arg))
 	(command-list (cdr arg)))
     (dotimes (i dotime)
-      (bot-command :command-list command-list))))
-
-
+      (bot-command :main :command-list command-list))))
 
 
 (defun make-loop-list (list)
   (setf (cdr (last list)) list))
 
-(defcommand :loop-command arg
+(defcommand :main :loop-command arg
   (let ((looped-command-list (make-loop-list arg)))
-    (bot-command :command-list looped-command-list)))
+    (bot-command :main :command-list looped-command-list)))
 
 
 
