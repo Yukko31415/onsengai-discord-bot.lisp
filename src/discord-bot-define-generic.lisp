@@ -2,8 +2,6 @@
 (in-package #:discord-bot-define-generic)
 
 
-
-
 ;;;; --------------------------------------------------------------
 ;;;; generic関数の定義 --------------------------------------------
 
@@ -13,9 +11,10 @@
 ;;;; main-command -------------------------------------------------
 
 
-(defmacro defcommand (command arg-let &body body)
-  (let ((key (gensym)))
-    `(defmethod bot-command ((,key (eql ,command)) ,arg-let)
+(defmacro defcommand (bot-type command arg-let &body body)
+  (let ((type (gensym))
+	(key (gensym)))
+    `(defmethod bot-command ((,type (eql ,bot-type)) (,key (eql ,command)) ,arg-let)
        ,@body)))
 
 
