@@ -2,30 +2,57 @@
 (in-package #:discord-bot-rss)
 
 
+;;;; ---------------------------------------------------------------------------------
+;;;; classの設定 ---------------------------------------------------------------------
+
+
+
+(defclass article ()
+  ((link
+    :initarg :link :accessor link)
+   (color
+    :initarg :color :accessor color)
+   (icon
+    :initarg :icon :accessor icon)))
+
+
+(defclass sandbox (article)
+  ((color
+    :initform 49408)
+   (icon
+    :initform "<:SB:1088712219656728657>")))
+
+
+(defclass wikidot-jp (article)
+  ((color
+    :initform 15007744)
+   (icon
+    :initform "<:Pos:1088712480865394700>")))
+
+
 ;;;; --------------------------------------------------------------
 ;;;; rss-bot-commands ---------------------------------------------
 
 
-(defcommand :rss-post (object cons)
+(defcommand :rss :post (object cons)
   (dolist (i object)
     (bot-command key i)))
 
-(defcommand :rss-post (object sandbox)
+
+(defcommand :rss :post (object article)
 	   (check-rss-feeds
 	    (link object)
 	    (color object)
 	    (icon object)))
 
-(defcommand :rss-post (object wikidot-jp)
-	   (check-rss-feeds
-	    (link object)
-	    (color object)
-	    (icon object)))
 
-(defcommand :save-rss-queue arg
+(defcommand :rss :save-queue arg
   (output-key-plist-to-data *key-queue*))
 
 
+(defcommand :rss :initialize arg
+  (setf *seen-items* (set-seen-items *filepath*))
+  (setf *key-queue* (set-key-queue *filepath*)))
 
 
 
@@ -42,8 +69,6 @@
 
 ;;;; ---------------------------------------------------------------------------------
 ;;;; *seen-items*の初期設定 ----------------------------------------------------------
-
-
 
 
 (defparameter *filepath* "~/common-lisp/discord-bot/data/rss-queue-list.txt")
@@ -70,9 +95,6 @@
 		      queue))))
 
 
-
-
-
 ;; RSSで閲覧したページのリンクを保存するキー
 (defparameter *seen-items* nil  "投稿済みの記事を記録するハッシュテーブル")
 
@@ -82,9 +104,6 @@
 
 
 
-(defun initialize ()
-  (setf *seen-items* (set-seen-items *filepath*))
-  (setf *key-queue* (set-key-queue *filepath*)))
 
 
 ;;;; ------------------------------------------------------------------
