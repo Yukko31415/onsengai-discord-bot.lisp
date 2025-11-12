@@ -1,8 +1,4 @@
 
-
-
-
-
 ;;;; --------------------------------------------------------------
 ;;;; ジェネリック関数定義  ----------------------------------------
 
@@ -10,27 +6,9 @@
 (defpackage #:discord-bot-define-generic
   (:use #:cl)
 
-  (:export #:run-command))
+  (:export #:run-command
+	   #:defcommand))
 
-
-
-
-;;;; --------------------------------------------------------------
-;;;; クラス定義  --------------------------------------------------
-
-
-(defpackage #:discord-bot-define-class
-  (:use #:cl)
-
-  (:export #:sandbox
-	   #:sandbox-link
-	   #:sandbox-color
-	   #:sandbox-icon
-
-	   #:wikidot-jp
-	   #:wikidot-jp-link
-	   #:wikidot-jp-color
-	   #:wikidot-jp-icon))
 
 
 ;;;; --------------------------------------------------------------
@@ -41,11 +19,7 @@
   (:use #:cl
 	#:bordeaux-threads
 	#:lparallel.queue
-	#:discord-bot-define-generic
-	#:discord-bot-define-class)
-
-  (:import-from #:discord-bot-command-handler
-		#:add-command)
+	#:discord-bot-define-generic)
 
   (:export #:run-rss-bot))
 
