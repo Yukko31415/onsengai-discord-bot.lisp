@@ -24,6 +24,7 @@
   :serial t
   :components ((:file "discord-bot-packages")
 	       (:file "discord-bot-define-generic")
+	       (:file "discord-bot-post")
 	       (:file "discord-bot-rss")
 	       (:file "discord-bot-main"))
   :entry-point "discord-bot-main:start")
