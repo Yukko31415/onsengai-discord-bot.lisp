@@ -4,10 +4,23 @@
 
 
 (defpackage #:discord-bot-define-generic
+  (:documentation "generic関数bot-commandを定義する")
   (:use #:cl)
 
   (:export #:run-command
 	   #:defcommand))
+
+
+;;;; --------------------------------------------------------------
+;;;; discordポスト処理  -------------------------------------------
+
+
+(defpackage #:discord-bot-post
+  (:documentation "DiscordにJSONをポストする")
+  (:use #:cl
+	;; dexadorを使う予定だけど、
+	;; deleteでコンフリクトするのでuseはしない
+	))
 
 
 
@@ -16,6 +29,7 @@
 
 
 (defpackage #:discord-bot-rss
+  (:documentation "rss-botのメインロジック")
   (:use #:cl
 	#:bordeaux-threads
 	#:lparallel.queue
@@ -30,6 +44,7 @@
 
 
 (defpackage #:discord-bot-main
+  (:documentation "エントリーポイントやイニシャライズの管理")
   (:use #:cl
 	#:slynk
 	#:bordeaux-threads
