@@ -19,7 +19,7 @@
   (:documentation "DiscordにJSONをポストする")
   (:use #:cl
 	;; dexadorを使う予定だけど、
-	;; deleteでコンフリクトするのでuseはしない
+	;; delete関数でclとコンフリクトするのでuseはしない
 	))
 
 
@@ -34,7 +34,8 @@
 	#:bordeaux-threads
 	#:lparallel.queue
 	
-	#:discord-bot-define-generic)
+	#:discord-bot-define-generic
+	#:discord-bot-post)
 
   (:export #:run-rss-bot))
 
