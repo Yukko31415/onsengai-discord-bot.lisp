@@ -53,22 +53,25 @@
 (defun set-seen-items (pathname)
   (with-open-file (content pathname
 			   :direction :input)
-		  (let ((list (read content)))
-		    (let ((hash-table (make-hash-table :test 'equal))
-			  (keys-list list))
-		      (dolist (key keys-list)
-			(setf (gethash key hash-table) t))
-		      hash-table))))
+
+    (let* ((list (read content))
+	   (hash-table (make-hash-table :test 'equal))
+	   (keys-list list))
+
+      (dolist (key keys-list)
+	(setf (gethash key hash-table) t))
+      hash-table)))
 
 (defun set-key-queue (pathname)
   (with-open-file (content pathname
 			   :direction :input)
-		  (let ((list (read content)))
-		    (let ((keys-list list)
-			  (queue (make-queue)))
-		      (dolist (i keys-list)
-			(push-queue i queue))
-		      queue))))
+    
+    (let* ((list (read content))
+	   (keys-list list)
+	   (queue (make-queue)))
+      
+      (dolist (i keys-list)
+	(push-queue i queue)))))
 
 
 ;; RSSで閲覧したページのリンクを保存するキー
@@ -284,40 +287,6 @@
       nil)))
 
 
-
-
-
-;;;; ------------------------------------------------------------------
-;;;; Discord API連携とメインループ
-;;;; ------------------------------------------------------------------
-
-;;;; ------------------------------------------------------------------
-;;;; Discord API連携
-;;;; ------------------------------------------------------------------
-
-
-(defun send-discord-message (embed-data)
-  "Discordの指定されたチャンネルにEmbedメッセージを送信する"
-  (let* ((url (format nil "https://discord.com/api/v10/channels/~A/messages" *channel-id*))
-	 (headers `(("Authorization" . ,(format nil "Bot ~A" *bot-token*))
-		    ("Content-Type" . "application/json")))
-
-	 ;; 1. 空のハッシュテーブルを作成
-	 (payload-ht (make-hash-table :test 'equal))
-	 ;; 2. "embeds"というキーで、embed-dataを要素に持つリストを値として設定
-	 (payload (progn
-		    (setf (gethash "embeds" payload-ht) (list embed-data))
-		    ;; 3. ハッシュテーブルをJSON文字列にエンコード
-		    (cl-json:encode-json-to-string payload-ht))))
-    
-    (handler-case
-	(drakma:http-request url
-			     :method :post
-			     :additional-headers headers
-			     :content payload
-			     :content-type "application/json")
-      (error (e)
-	(format t "Discord送信エラー: ~A~%" e)))))
 
 
 
