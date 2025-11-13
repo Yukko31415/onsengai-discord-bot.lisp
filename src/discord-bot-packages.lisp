@@ -19,6 +19,7 @@
   (:use #:cl
 	#:bordeaux-threads
 	#:lparallel.queue
+	
 	#:discord-bot-define-generic)
 
   (:export #:run-rss-bot))
@@ -32,6 +33,7 @@
   (:use #:cl
 	#:slynk
 	#:bordeaux-threads
+	
 	#:discord-bot-rss
 	#:discord-bot-define-generic)
 
