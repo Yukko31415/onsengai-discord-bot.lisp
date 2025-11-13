@@ -30,30 +30,6 @@
     :initform "<:Pos:1088712480865394700>")))
 
 
-;;;; --------------------------------------------------------------
-;;;; rss-bot-commands ---------------------------------------------
-
-
-(defcommand :rss :post (object cons)
-  (dolist (i object)
-    (bot-command key i)))
-
-
-(defcommand :rss :post (object article)
-	   (check-rss-feeds
-	    (link object)
-	    (color object)
-	    (icon object)))
-
-
-(defcommand :rss :save-queue arg
-  (output-key-plist-to-data *key-queue*))
-
-
-(defcommand :rss :initialize arg
-  (setf *seen-items* (set-seen-items *filepath*))
-  (setf *key-queue* (set-key-queue *filepath*)))
-
 
 
 ;;;; ---------------------------------------------------------------------------------
@@ -449,3 +425,29 @@
 				  (:sleep 300))
 		(:save-rss-queue))))
 
+
+
+
+;;;; --------------------------------------------------------------
+;;;; bot-commands -------------------------------------------------
+
+
+(defcommand :rss :post (object cons)
+  (dolist (i object)
+    (bot-command key i)))
+
+
+(defcommand :rss :post (object article)
+	   (check-rss-feeds
+	    (link object)
+	    (color object)
+	    (icon object)))
+
+
+(defcommand :rss :save-queue arg
+  (output-key-plist-to-data *key-queue*))
+
+
+(defcommand :rss :initialize arg
+  (setf *seen-items* (set-seen-items *filepath*))
+  (setf *key-queue* (set-key-queue *filepath*)))
