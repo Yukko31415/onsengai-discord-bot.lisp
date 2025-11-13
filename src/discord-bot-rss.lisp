@@ -300,16 +300,16 @@
 
 (defun format-rss-message (item color icon)
   "RSSアイテムをDiscordのEmbedデータ（連想リスト）に変換する"
-  `(("title"       . ,(format nil "~a ~a" icon (getf item :title)))
+  `(("title" . ,(format nil "~a ~a" icon (getf item :title)))
     ("description" . ,(let ((desc (getf item :description)))
-                        ;; descriptionが長すぎる場合に400文字で切り詰める
-                        (if (> (length desc) 400)
-                            (concatenate 'string (subseq desc 0 400) "...")
-                            desc)))
-    ("url"         . ,(getf item :link))
-    ("color"       . ,color) ; 色を16進数の #3498DB (青色) から10進数に変換したもの
-    ("timestamp"   . ,(local-time:format-timestring nil (local-time:now))) ; 現在時刻のタイムスタンプ
-    ("footer"      . (("text" . "RSS Feed Bot")))))
+			;; descriptionが長すぎる場合に400文字で切り詰める
+			(if (> (length desc) 400)
+			    (concatenate 'string (subseq desc 0 400) "...")
+			    desc)))
+    ("url" . ,(getf item :link))
+    ("color" . ,color) ; 色を16進数の #3498DB (青色) から10進数に変換したもの
+    ("timestamp" . ,(local-time:format-timestring nil (local-time:now))) ; 現在時刻のタイムスタンプ
+    ("footer" . (("text" . "RSS Feed Bot")))))
 
 
 (defun add-data (key value)
