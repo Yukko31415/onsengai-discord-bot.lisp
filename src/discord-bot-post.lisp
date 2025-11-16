@@ -5,7 +5,7 @@
 
 
 ;;;; ------------------------------------------------------------------
-;;;; Discord API連携
+;;;; Discord API連携 -------------------------------------------------
 ;;;; ------------------------------------------------------------------
 
 (defun get-bot-token ()
@@ -54,13 +54,12 @@
   `(:embeds ,(list content)))
 
 
-(defun send-discord-message (content channel-id bot-token)
+(defun send-discord-message (channel-id content bot-token)
   "Discordの指定されたチャンネルにEmbedメッセージを送信する"
   
   (let* ((url (format nil "https://discord.com/api/v10/channels/~A/messages" channel-id))
 	 (headers (make-header bot-token "application/json"))
 	 (payload (cl-json:encode-json-plist-to-string (make-content content))))
-    (format t "~a" payload)
     
     (handler-case
 	(dex:post url
@@ -70,8 +69,19 @@
 	(format t "Discord送信エラー: ~A~%" e)))))
 
 
+;;;; ------------------------------------------------------------------
+;;;; defcommand -------------------------------------------------------
+;;;; ------------------------------------------------------------------
+
+(defcommand :post :post-message arg
+  (let ((channel-id (first arg))
+	(content (second arg)))
+    (send-discord-message channel-id content *bot-token*)))
 
 
 
-
+;; こんな風に送信する
+;; (run-command (:post :post-message 1406525194289287311
+;; 		    ((:title . "hi")
+;; 		     (:description . "これは内容です"))))
 
