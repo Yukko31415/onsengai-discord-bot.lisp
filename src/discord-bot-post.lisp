@@ -2,11 +2,8 @@
 
 (in-package #:discord-bot-post)
 
-(defvar *bot-token*
-  (with-open-file (token (pathname "~/common-lisp/discord-bot/data/token.txt")
-			 :direction :input)
-    (read-line token))
-  "Discordボットのトークン")
+
+
 
 ;;;; ------------------------------------------------------------------
 ;;;; Discord API連携
@@ -19,22 +16,41 @@
 	`(#:Content-Type . ,content-type)))
 
 
-(defun send-discord-message (embed-data channel-id bot-token)
-  
+(defgeneric make-content (content)
+  (:documentation "文字列、リストを受け取ってペイロードを返す"))
+
+
+(defmethod make-content :around (content)
+  (typecase content
+    (string
+     (call-next-method))
+    (cons
+     (let ((first-content (car content)))
+       (typecase first-content
+	 (string
+	  (append
+	   (apply #'make-content `(,first-content))
+	   (apply #'make-content (cdr content))))
+	 (cons
+	  (call-next-method)))))))
+
+
+(defmethod make-content ((content string))
+  `(:content ,content))
+
+(defmethod make-content ((content cons))
+  `(:embeds ,(list content)))
+
+
+(defun send-discord-message (content channel-id bot-token)
   "Discordの指定されたチャンネルにEmbedメッセージを送信する"
   
   (let* ((url (format nil "https://discord.com/api/v10/channels/~A/messages" channel-id))
-	 
 	 (headers (make-header bot-token "application/json"))
+	 (payload (cl-json:encode-json-plist-to-string (make-content content))))
 
-	 ;; 1. 空のハッシュテーブルを作成
-	 (payload-ht (make-hash-table :test 'equal))
-	 ;; 2. "embeds"というキーで、embed-dataを要素に持つリストを値として設定
-	 (payload (progn
-		    (setf (gethash "embeds" payload-ht) (list embed-data))
-		    ;; 3. ハッシュテーブルをJSON文字列にエンコード
-		    (cl-json:encode-json-to-string payload-ht))))
-
+    (format t "~a" payload)
+    
     (handler-case
 	(dex:post url
 		  :headers headers
@@ -42,7 +58,7 @@
       (error (e)
 	(format t "Discord送信エラー: ~A~%" e)))))
 
-(send-discord-message '((#:title . "hello!")) 1406525194289287311 (with-open-file (token (pathname "~/common-lisp/discord-bot/data/token.txt")
-			 :direction :input)
-    (read-line token)))
 
+(send-discord-message '("hi" ((:title . "hi")))
+		      1406525194289287311
+		      "MTQwNDgzNTk4MDAzNjI3NjI5NQ.GGnSTo.-EVYh64tXgHiZfbnQuBSfLExJEvP4fD85YNFtc")
