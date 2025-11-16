@@ -2,9 +2,9 @@
 (in-package #:discord-bot-rss)
 
 
-;;;; ---------------------------------------------------------------------------------
-;;;; classの設定 ---------------------------------------------------------------------
-
+;;;; ------------------------------------------------------------------
+;;;; classの設定 ------------------------------------------------------
+;;;; ------------------------------------------------------------------
 
 
 (defclass article ()
@@ -32,61 +32,49 @@
 
 
 
-;;;; ---------------------------------------------------------------------------------
-;;;; botトークンの取得 ---------------------------------------------------------------
+;;;; ------------------------------------------------------------------
+;;;; botトークンの取得 ------------------------------------------------
+;;;; ------------------------------------------------------------------
 
 
-(defvar *bot-token*
-  (with-open-file (token (pathname "~/common-lisp/discord-bot/data/token.txt")
-			 :direction :input)
-    (read-line token))
-  "Discordボットのトークン")
+(defparameter *token-filepath* "~/common-lisp/discord-bot/data/token.txt")
+
+(defun set-bot-token (filepath)
+  (defparameter *bot-token* 
+    (with-open-file (token (pathname filepath)
+			   :direction :input)
+      (read-line token))))
 
 
-;;;; ---------------------------------------------------------------------------------
-;;;; *seen-items*の初期設定 ----------------------------------------------------------
+;;;; ------------------------------------------------------------------
+;;;; *seen-items*の初期設定 -------------------------------------------
+;;;; ------------------------------------------------------------------
 
 
-(defparameter *filepath* "~/common-lisp/discord-bot/data/rss-queue-list.txt")
+
+(defparameter *queue-list-filepath* "~/common-lisp/discord-bot/data/rss-queue-list.txt")
 
 
 (defun set-seen-items (pathname)
   (with-open-file (content pathname
 			   :direction :input)
 
-    (let* ((list (read content))
-	   (hash-table (make-hash-table :test 'equal))
+    (let* ((hash-table (make-hash-table :test 'equal))
+	   (queue (make-queue))
+	   (list (read content))
 	   (keys-list list))
 
       (dolist (key keys-list)
-	(setf (gethash key hash-table) t))
-      hash-table)))
+	(setf (gethash key hash-table) t)
+	(push-queue key queue))
 
-(defun set-key-queue (pathname)
-  (with-open-file (content pathname
-			   :direction :input)
-    
-    (let* ((list (read content))
-	   (keys-list list)
-	   (queue (make-queue)))
-      
-      (dolist (i keys-list)
-	(push-queue i queue)))))
-
-
-;; RSSで閲覧したページのリンクを保存するキー
-(defparameter *seen-items* nil  "投稿済みの記事を記録するハッシュテーブル")
-
-;; キーを追加した順番に管理するリスト（キューとして使用）
-
-(defparameter *key-queue* nil)
-
-
+      (defparameter *seen-items* hash-table)
+      (defparameter *key-queue* queue))))
 
 
 
 ;;;; ------------------------------------------------------------------
-;;;; グローバル変数と設定
+;;;; グローバル変数と設定 ---------------------------------------------
 ;;;; ------------------------------------------------------------------
 
 
@@ -117,7 +105,7 @@
 
 
 ;;;; ------------------------------------------------------------------
-;;;; XMLデータの抽出
+;;;; XMLデータの抽出 --------------------------------------------------
 ;;;; ------------------------------------------------------------------
 
 
@@ -223,7 +211,7 @@
 
 
 ;;;; ------------------------------------------------------------------
-;;;; RSSフィードの取得と解析
+;;;; RSSフィードの取得と解析 ------------------------------------------
 ;;;; ------------------------------------------------------------------
 
 
@@ -293,7 +281,7 @@
 
 
 ;;;; ------------------------------------------------------------------
-;;;; メインループ
+;;;; メインループ -----------------------------------------------------
 ;;;; ------------------------------------------------------------------
 
 
@@ -377,14 +365,9 @@
 
 
 
-
-
-
-
-
 ;;;; --------------------------------------------------------------
 ;;;; rss-command-list ---------------------------------------------
-
+;;;; --------------------------------------------------------------
 
 (defun start-rss-bot ()
   (add-command (:loop-command
@@ -395,10 +378,10 @@
 		(:save-rss-queue))))
 
 
-
-
 ;;;; --------------------------------------------------------------
 ;;;; bot-commands -------------------------------------------------
+;;;; --------------------------------------------------------------
+
 
 
 (defcommand :rss :post (object cons)
@@ -418,5 +401,5 @@
 
 
 (defcommand :rss :initialize arg
-  (setf *seen-items* (set-seen-items *filepath*))
-  (setf *key-queue* (set-key-queue *filepath*)))
+  (set-bot-token *token-filepath*)
+  (set-seen-items *queue-list-filepath*))
