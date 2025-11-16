@@ -22,9 +22,13 @@
 (defun make-command-list (lst)
   (cons 'list (mapcar #'(lambda (arg)
 			  (if (listp arg)
-			      (make-command-list arg)
+			      (if (listp (cdr arg))
+				  (make-command-list arg)
+				  `(cons ,(car arg) ,(cdr arg)))
 			      (identity arg)))
 		      lst)))
+
+
 
 (defmacro run-command (list)
   (let ((bot-type (first list))
