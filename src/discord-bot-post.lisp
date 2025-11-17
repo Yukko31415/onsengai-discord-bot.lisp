@@ -20,29 +20,10 @@
 	`(#:Content-Type . ,content-type)))
 
 
-(defun make-plist (keyword prop)
-  "propがnilならばnilを返し、tならばキーワードとのplistにして返す"
-  (when prop
-    `(,keyword ,prop)))
 
 
 (defgeneric make-content (content)
   (:documentation "文字列、リストを受け取ってペイロードを返す"))
-
-(defmethod make-content :around (content)
-  (typecase content
-    (cons
-     (let ((first-content (car content)))
-       (typecase first-content
-	 (string
-	  (append
-	   (apply #'make-content `(,first-content))
-	   (apply #'make-content (cdr content))))
-	 (cons
-	  (call-next-method)))))
-    (t
-     (call-next-method))))
-
 
 (defmethod make-content ((content string))
   `(:content ,content))
@@ -51,7 +32,12 @@
   `(:content ,(write-to-string content)))
 
 (defmethod make-content ((content cons))
-  `(:embeds ,(list content)))
+  (let ((message-content (when (typep (car content) '(or string number))
+			    (pop content))))
+    (if message-content
+	(append (make-content message-content) `(:embeds ,content))
+	`(:embeds ,(list content)))))
+
 
 
 (defun send-discord-message (channel-id content bot-token)
@@ -79,9 +65,9 @@
     (send-discord-message channel-id content *bot-token*)))
 
 
-
-;; こんな風に送信する
+;; sample
 ;; (run-command (:post :post-message 1406525194289287311
-;; 		    ((:title . "hi")
-;; 		     (:description . "これは内容です"))))
+;; 		    "hi"))
+
+
 
