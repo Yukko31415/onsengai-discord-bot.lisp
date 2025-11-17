@@ -8,8 +8,8 @@
 
 
 (defclass article ()
-  ((link
-    :initarg :link :accessor link)
+  ((link-list
+    :initarg :link :accessor link-list)
    (color
     :initarg :color :accessor color)
    (icon
@@ -42,6 +42,7 @@
 
 
 (defun set-seen-items (pathname)
+  "閲覧したページのリンクを保存するハッシュテーブルとキューを作成する"
   (with-open-file (content pathname
 			   :direction :input)
 
@@ -66,133 +67,27 @@
 
 (defparameter *channel-id* "1121439803213365279" "投稿先のDiscordチャンネルID")
 
-
 (defvar *check-interval* 300 "RSSフィードのチェック間隔（秒）")
-
-;;; ボット状態管理
-
-
-(defvar *bot-running* nil "ボットが実行中かどうかのフラグ")
-;; データを何個まで保持するかの上限
-
 
 (defparameter *max-items* 100)
 
 (defparameter *sandbox-rss-link*
   (make-instance 'sandbox
-		 :link "http://scp-jp-sandbox3.wikidot.com/feed/pages/tags/%2B_criticism-in/category/draft/order/updated_at%20.xml"))
+		 :link '("http://scp-jp-sandbox3.wikidot.com/feed/pages/tags/%2B_criticism-in/category/draft/order/updated_at%20.xml")))
 
 
 (defparameter *wikidot-jp-rss-link*
   (make-instance 'wikidot-jp
-		 :link "http://scp-jp.wikidot.com/feed/pages/category/_default%2Cauthor%2Cprotected%2Cwanderers%2Ctheme%2Ccomponent%2Creference%2Cart/order/created_at%20desc/limit/20.xml"))
+		 :link '("http://scp-jp.wikidot.com/feed/pages/category/_default%2Cauthor%2Cprotected%2Cwanderers%2Ctheme%2Ccomponent%2Creference%2Cart/order/created_at%20desc/limit/20.xml")))
 
 
 
 
-;;;; ------------------------------------------------------------------
-;;;; XMLデータの抽出 --------------------------------------------------
-;;;; ------------------------------------------------------------------
-
-
-(defun find-child-node (parent-node child-name)
-  "親ノードの子から指定された名前の最初の子ノードを見つける"
-  (find-if (lambda (node)
-             (and (typep node 'xmls:node)
-                  (string-equal (xmls:node-name node) child-name)))
-           (xmls:node-children parent-node)))
-
-
-(defun extract-matched-string (html-string)
-  "HTML文字列から「付与予定タグ:」で始まる行を正確に一行だけ抽出する"
-  (when (and html-string (> (length html-string) 0))
-    (let* ((parsed-html (lquery:$ (initialize html-string)))
-           ;; 1. まず<p>タグと<strong>タグをすべて候補としてリストアップ
-           (candidate-nodes (coerce (lquery:$ parsed-html "p, strong") 'list)))
-
-      ;; 2. 候補の中から、目的のテキストを含む最初のノードを見つける
-      (let ((target-node (find-if
-                          (lambda (node)
-                            (let ((node-text (format nil "~{~A~^ ~}"
-                                                     (coerce (lquery:$ node (text)) 'list))))
-                              (search "付与予定タグ:" node-text)))
-                          candidate-nodes)))
-        (when target-node
-          ;; 3. 見つかったノードのテキストを改行で分割
-          (let* ((full-text (format nil "~{~A~^ ~}" (coerce (lquery:$ target-node (text)) 'list)))
-                 (lines (str:lines full-text)))
-            ;; 4. 分割した行の中から「付与予定タグ:」で始まる行を探して返す
-            (find-if (lambda (line)
-                       (str:starts-with-p "付与予定タグ:" (str:trim line)))
-                     lines)))))))
 
 
 
-(defun extract-inpagetags-text (html-string)
-  "HTML文字列から.inpagetagsクラス内のテキストを抽出し、「付与予定タグ: 」を付けて返す"
-  (when (and html-string (> (length html-string) 0))
-    (let* ((parsed-html (lquery:$ (initialize html-string)))
-           ;; .inpagetagsクラス内のspan要素を直接指定
-           (tags-node (lquery:$ parsed-html ".inpagetags span")))
-      ;; ノードが見つかった場合のみ処理を続行
-      (when (and tags-node (> (length (coerce tags-node 'list)) 0))
-        ;; 最初のspanノードのテキストを取得し、前後の空白を削除
-        (let ((tags-text (str:trim (plump:text (aref tags-node 0)))))
-          ;; テキストが空でないことを確認
-          (when (> (length tags-text) 0)
-            (format nil "付与予定タグ: ~a" tags-text)))))))
 
 
-
-(defun get-tags-line (html-string)
-  "HTMLからタグ行を抽出する。
-   まず「付与予定タグ:」で始まる行を探し（extract-matched-string）、
-   見つからなければ.inpagetagsクラスからの抽出を試みる。"
-  ;; orは最初のNILでない値を返す。両方見つからなければNILを返す。
-  (or (extract-matched-string html-string)
-      (extract-inpagetags-text html-string)))
-
-
-(defun get-node-text (node)
-  "ノードの持つすべての子要素から文字列を連結して返す"
-  (when node
-    (with-output-to-string (s)
-      (map nil
-	   (lambda (child)
-	     (when (stringp child)
-	       (write-string child s)))
-	   (xmls:node-children node)))))
-
-
-(defun parse-item (item-node)
-  "<item>または<entry>ノード(構造体)から情報を抽出する
-   最終的にplistを作成して返す"
-  (let* ((title (get-node-text (find-child-node item-node "title")))
-	 (link (get-node-text (find-child-node item-node "link")))
-	 (pub-date (get-node-text (find-child-node item-node "pubDate")))
-	 (description-html (get-node-text (or (find-child-node item-node "content:encoded")
-					      (find-child-node item-node "description")))))
-
-    (list :title title
-	  :link link
-	  :description (get-tags-line description-html)
-	  :pub-date pub-date)))
-
-
-
-(defun extract-items (parsed-root-node)
-  "パースされたXMLのルートノードから<item>要素のリストを抽出し、
-   plistにして返す"
-  (let* ((channel-node (find-child-node parsed-root-node "channel"))
-         (items '()))
-    (when channel-node
-      (map nil
-           (lambda (node)
-             (when (and (typep node 'xmls:node)
-                        (string-equal (xmls:node-name node) "item"))
-               (push (parse-item node) items)))
-           (xmls:node-children channel-node)))
-    items))
 
 
 
@@ -202,63 +97,22 @@
 
 
 
+
+
 (defun get-rss-source (url)
   "URLを受け取り、問い合わせてRSSを受け取る"
-  (drakma:http-request
-   url			       ; URLは文字列またはPURI:URIオブジェクト
-   :force-binary t
-   :user-agent "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36"
-   :additional-headers '(("Accept" . "application/xml, text/xml, */*")
-			 ("Accept-Language" . "ja,en-US;q=0.9,en;q=0.8"))
-   :redirect t))
+  (dex:get url))
 
 
-(defun debug-output (xml-string charset)
+(defun debug-output (xml-string)
   "XMLファイルをdebug-output.xmlに書き出す（デバッグ用）"
   (with-open-file (stream "~/common-lisp/discord-bot/debug/debug-output.xml" ; 拡張子を.xmlに
 			  :direction :output
-			  :if-exists :supersede
-			  :external-format charset) ; 文字コードを指定
+			  :if-exists :supersede)
     (write-string xml-string stream)))
 
 
-(defun decompress-gzip (headers response-body)
-  "もし受け取ったRSSファイルがgzipで圧縮されていた場合、それを解凍する"
-  (if (string-equal (drakma:header-value :content-encoding headers) "gzip")
-      (progn
-	(chipz:decompress nil 'chipz:gzip response-body))
-      response-body))
 
-
-(defun debug-parse-rss (url)
-  "指定されたURLからRSSフィードを取得・パースする。Gzip圧縮とURLエンコーディングに対応"
-
-  (format t "~%--- [詳細デバッグ] ~A の解析を開始 ---~%" url)
-  
-  (handler-case
-      (multiple-value-bind (response-body status-code headers) (get-rss-source url)
-	
-	(format t "[詳細デバッグ] サーバーからのステータスコード: ~A~%" status-code)
-	
-	(when (= status-code 200)
-	  ;; Gzipで圧縮されているかチェックし、必要なら伸長する
-	  (let* ((body-octets (decompress-gzip headers response-body))
-		 (charset (or (drakma:header-value :charset headers) :utf-8))
-		 (xml-string (babel:octets-to-string body-octets :encoding charset)))
-	    
-	    ;; デバッグ用に、人間が読める伸長済みのXMLをファイルに書き出す
-	    (debug-output xml-string charset)
-	    (format t "[詳細デバッグ] ★重要★ 伸長後の応答を 'debug-output.xml' に保存しました。~%")
-
-	    ;; パースして、plistにして返す
-	    (format t "[詳細デバッグ] XMLのパースを試みます...~%")
-	    (let ((parsed (xmls:parse xml-string)))
-	      (format t "[詳細デバッグ] XMLパース成功！~%")
-	      (extract-items parsed)))))
-    
-    (error (e)
-      (format t "[詳細デバッグ] ★★★ エラー発生 ★★★: ~A~%" e)
-      nil)))
 
 
 
@@ -286,6 +140,8 @@
     ("footer" . (("text" . "RSS Feed Bot")))))
 
 
+
+
 (defun add-data (key value)
   "新しいデータを追加し、上限を超えていれば最も古いデータを削除する"
   ;; --- ステップ1: 新しいデータを追加 ---
@@ -303,36 +159,6 @@
 	       (remhash oldest-key *seen-items*)
 	       (format t "--- 上限を超えたため、一番古いキー「~A」を削除しました ---~%" oldest-key))
 	     (return))))
-
-
-
-(defun item-check-and-send (items color icon)
-  (progn
-    (format t "[デバッグ] ~D件の記事が見つかりました。~%" (length items))
-    (dolist (item items)
-      (let ((item-id (getf item :link))
-	    (title (getf item :title)))
-
-	(format t "[デバッグ] 記事チェック: ~A~%" title)
-
-	(unless (gethash item-id *seen-items*)
-	  (format t "[デバッグ] >> 新着記事です！ Discordに投稿します。~%")
-	  (add-data item-id t)
-	  (send-discord-message (format-rss-message item color icon))
-	  (sleep 1))))))
-
-
-
-(defun check-rss-feeds (url color icon)
-  "登録されたすべてのRSSフィードをチェックし、新しい項目があれば投稿する"
-  (format t "~%~&[デバッグ] RSSフィードのチェックを開始します...")
-  (format t "[デバッグ] チェック中: ~A~%" url)
-  (let ((items (debug-parse-rss url)))
-    (if (null items)
-	(format t "[デバッグ] このURLからは記事を取得できませんでした、または空でした。~%")
-      (item-check-and-send items color icon))))
-
-
 
 
 (defun output-key-plist-to-data (queue)
@@ -370,16 +196,8 @@
 
 
 
-(defcommand :rss :post (object cons)
-  (dolist (i object)
-    (bot-command key i)))
-
-
-(defcommand :rss :post (object article)
-	   (check-rss-feeds
-	    (link object)
-	    (color object)
-	    (icon object)))
+(defcommand :rss :post arg
+  )
 
 
 (defcommand :rss :save-queue arg
