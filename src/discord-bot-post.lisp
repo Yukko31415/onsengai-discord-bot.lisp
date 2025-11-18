@@ -32,10 +32,12 @@
   `(:content ,(write-to-string content)))
 
 (defmethod make-content ((content cons))
-  (let ((message-content (when (typep (car content) '(or string number))
-			    (pop content))))
+  (let* ((message-content (when (typep (car content) '(or string number))
+			   (first content)))
+	(embed-content (when message-content
+			 (cdr content))))
     (if message-content
-	(append (make-content message-content) `(:embeds ,content))
+	(append (make-content message-content) `(:embeds ,embed-content))
 	`(:embeds ,(list content)))))
 
 
@@ -46,6 +48,8 @@
   (let* ((url (format nil "https://discord.com/api/v10/channels/~A/messages" channel-id))
 	 (headers (make-header bot-token "application/json"))
 	 (payload (cl-json:encode-json-plist-to-string (make-content content))))
+
+    (format t "~%~a~%" payload)
     
     (handler-case
 	(dex:post url
@@ -55,9 +59,12 @@
 	(format t "Discord送信エラー: ~A~%" e)))))
 
 
+
 ;;;; ------------------------------------------------------------------
 ;;;; defcommand -------------------------------------------------------
 ;;;; ------------------------------------------------------------------
+
+
 
 (defcommand :post :post-message arg
   (let ((channel-id (first arg))
@@ -65,9 +72,9 @@
     (send-discord-message channel-id content *bot-token*)))
 
 
-;; sample
-;; (run-command (:post :post-message 1406525194289287311
-;; 		    "hi"))
+sample
+(run-command (:post :post-message 1406525194289287311
+		    ("hi" ((:title . "title")))))
 
 
 
