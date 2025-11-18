@@ -72,9 +72,9 @@
     (send-discord-message channel-id content *bot-token*)))
 
 
-sample
-(run-command (:post :post-message 1406525194289287311
-		    ("hi" ((:title . "title")))))
+;; sample
+;; (run-command (:post :post-message 1406525194289287311
+;; 		    ("hi" ((:title . "title")))))
 
 
 
