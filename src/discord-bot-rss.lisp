@@ -1,19 +1,19 @@
-
 (in-package #:discord-bot-rss)
 
 
 ;;;; ------------------------------------------------------------------
-;;;; classの設定 ------------------------------------------------------
+;;;; classの設定
 ;;;; ------------------------------------------------------------------
+
 
 
 (defclass article ()
   ((link-list
-    :initarg :link :accessor link-list)
+    :initarg :link :accessor :link-list)
    (color
-    :initarg :color :accessor color)
+    :initarg :color :accessor :color)
    (icon
-    :initarg :icon :accessor icon)))
+    :initarg :icon :accessor :icon)))
 
 
 (defclass sandbox (article)
@@ -33,7 +33,7 @@
 
 
 ;;;; ------------------------------------------------------------------
-;;;; *seen-items*の初期設定 -------------------------------------------
+;;;; *seen-items*の初期設定
 ;;;; ------------------------------------------------------------------
 
 
@@ -60,8 +60,10 @@
 
 
 
+
+
 ;;;; ------------------------------------------------------------------
-;;;; グローバル変数と設定 ---------------------------------------------
+;;;; グローバル変数と設定
 ;;;; ------------------------------------------------------------------
 
 
@@ -76,16 +78,10 @@
 		 :link '("http://scp-jp-sandbox3.wikidot.com/feed/pages/tags/%2B_criticism-in/category/draft/order/updated_at%20.xml")))
 
 
+
 (defparameter *wikidot-jp-rss-link*
   (make-instance 'wikidot-jp
 		 :link '("http://scp-jp.wikidot.com/feed/pages/category/_default%2Cauthor%2Cprotected%2Cwanderers%2Ctheme%2Ccomponent%2Creference%2Cart/order/created_at%20desc/limit/20.xml")))
-
-
-
-
-
-
-
 
 
 
@@ -96,28 +92,26 @@
 ;;;; ------------------------------------------------------------------
 
 
+(defun get-item-list (depth key url)
+  (find-if
+   #'(lambda (list) (and (consp list) (stringp (car list)) (string= (car list) key)))
+   (nth depth (xmls:parse-to-list (dex:get url)))))
 
+(defun get-item-car (car-item)
+  (if (consp car-item)
+      (get-item-car (car car-item))
+      car-item))
 
+(defun item-member-p (item list)
+  (let ((car-item (car item)))
+    (member (get-item-car car-item)
+        list :test 'equal)))
 
-(defun get-rss-source (url)
-  "URLを受け取り、問い合わせてRSSを受け取る"
-  (dex:get url))
-
-
-(defun debug-output (xml-string)
-  "XMLファイルをdebug-output.xmlに書き出す（デバッグ用）"
-  (with-open-file (stream "~/common-lisp/discord-bot/debug/debug-output.xml" ; 拡張子を.xmlに
-			  :direction :output
-			  :if-exists :supersede)
-    (write-string xml-string stream)))
-
-
-
-
-
-
-
-
+(defun get-item-contents (depth key list url)
+  (remove-if-not
+   #'(lambda (item) (and (consp item)
+             (item-member-p item list)))
+   (get-item-list depth key url)))
 
 
 ;;;; ------------------------------------------------------------------
@@ -177,21 +171,10 @@
 
 
 
-;;;; --------------------------------------------------------------
-;;;; rss-command-list ---------------------------------------------
-;;;; --------------------------------------------------------------
-
-(defun start-rss-bot ()
-  (add-command (:loop-command
-		(:command-dotimes 5
-				  (:rss-post *sandbox-rss-link*
-					     *wikidot-jp-rss-link*)
-				  (:sleep 300))
-		(:save-rss-queue))))
 
 
 ;;;; --------------------------------------------------------------
-;;;; bot-commands -------------------------------------------------
+;;;; bot-commands
 ;;;; --------------------------------------------------------------
 
 
@@ -199,11 +182,11 @@
 (defcommand :rss :post arg
   )
 
+(defcommand :rss :initialize arg
+  (set-bot-token *token-filepath*)
+  (set-seen-items *queue-list-filepath*))
 
 (defcommand :rss :save-queue arg
   (output-key-plist-to-data *key-queue*))
 
 
-(defcommand :rss :initialize arg
-  (set-bot-token *token-filepath*)
-  (set-seen-items *queue-list-filepath*))
