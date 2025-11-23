@@ -48,8 +48,7 @@
 
     (let* ((hash-table (make-hash-table :test 'equal))
 	   (queue (make-queue))
-	   (list (read content))
-	   (keys-list list))
+	   (keys-list (read content)))
 
       (dolist (key keys-list)
 	(setf (gethash key hash-table) t)
@@ -88,34 +87,52 @@
 
 
 ;;;; ------------------------------------------------------------------
-;;;; RSSフィードの取得と解析 ------------------------------------------
+;;;; RSSフィードの取得と解析
 ;;;; ------------------------------------------------------------------
 
+(defun fetch-and-parse-from-xml (url)
+  "リンク先からxmlを取得し、リストにして返す"
+  (xmls:parse-to-list (dex:get url)))
 
-(defun get-item-list (depth key url)
+(defun find-content-if (key list)
+  "受け取ったリストの子ノードを解析し、一致したキーを持つリストを返す"
   (find-if
-   #'(lambda (list) (and (consp list) (stringp (car list)) (string= (car list) key)))
-   (nth depth (xmls:parse-to-list (dex:get url)))))
+   #'(lambda (list) (let ((car-list (car list)))
+		      (and (consp list)
+			   (stringp car-list)
+			   (string= car-list key))))
+   (cdr list)))
 
-(defun get-item-car (car-item)
-  (if (consp car-item)
-      (get-item-car (car car-item))
-      car-item))
+(defun item-member-p (item keys-list)
+  "受け取ったアイテムのcarがkeysに一致しているかを判定する"
+  (when (consp item)
+    (let ((car-item (car item)))
+      (member car-item
+	      keys-list :test 'equal))))
 
-(defun item-member-p (item list)
-  (let ((car-item (car item)))
-    (member (get-item-car car-item)
-        list :test 'equal)))
-
-(defun get-item-contents (depth key list url)
+(defun remove-content-if-not (keys-list item)
+  "キーに一致しない子ノードを取り除いて返す"
   (remove-if-not
-   #'(lambda (item) (and (consp item)
-             (item-member-p item list)))
-   (get-item-list depth key url)))
+   #'(lambda (s) (and (consp item)
+		      (item-member-p s keys-list)))
+   (cdr item)))
+
+
+
+
+;; テストコード
+
+;; (fetch-and-parse-from-xml "http://scp-jp.wikidot.com/feed/pages/category/_default%2Cauthor%2Cprotected%2Cwanderers%2Ctheme%2Ccomponent%2Creference%2Cart/order/created_at%20desc/limit/20.xml")
+
+;; (remove-content-if-not '("item") (find-content-if
+;; 			      "channel"
+;; 			      (fetch-and-parse-from-xml "http://scp-jp.wikidot.com/feed/pages/category/_default%2Cauthor%2Cprotected%2Cwanderers%2Ctheme%2Ccomponent%2Creference%2Cart/order/created_at%20desc/limit/20.xml")))
+
+
 
 
 ;;;; ------------------------------------------------------------------
-;;;; メインループ -----------------------------------------------------
+;;;; メインループ
 ;;;; ------------------------------------------------------------------
 
 
