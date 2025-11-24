@@ -9,7 +9,7 @@
 
 (defclass article ()
   ((link-list
-    :initarg :link :accessor :link-list)
+    :initarg :link-list :accessor :link-list)
    (color
     :initarg :color :accessor :color)
    (icon
@@ -74,25 +74,23 @@
 
 (defparameter *sandbox-rss-link*
   (make-instance 'sandbox
-		 :link '("http://scp-jp-sandbox3.wikidot.com/feed/pages/tags/%2B_criticism-in/category/draft/order/updated_at%20.xml")))
-
-
+		 :link-list '("http://scp-jp-sandbox3.wikidot.com/feed/pages/tags/%2B_criticism-in/category/draft/order/updated_at%20.xml")))
 
 (defparameter *wikidot-jp-rss-link*
   (make-instance 'wikidot-jp
-		 :link '("http://scp-jp.wikidot.com/feed/pages/category/_default%2Cauthor%2Cprotected%2Cwanderers%2Ctheme%2Ccomponent%2Creference%2Cart/order/created_at%20desc/limit/20.xml")))
-
-
+		 :link-list '("http://scp-jp.wikidot.com/feed/pages/category/_default%2Cauthor%2Cprotected%2Cwanderers%2Ctheme%2Ccomponent%2Creference%2Cart/order/created_at%20desc/limit/20.xml")))
 
 
 
 ;;;; ------------------------------------------------------------------
-;;;; RSSフィードの取得と解析
+;;;; RSSフィードの取得とパース
 ;;;; ------------------------------------------------------------------
+
 
 (defun fetch-and-parse-from-xml (url)
   "リンク先からxmlを取得し、リストにして返す"
   (xmls:parse-to-list (dex:get url)))
+
 
 (defun find-content-if (key list)
   "受け取ったリストの子ノードを解析し、一致したキーを持つリストを返す"
@@ -103,12 +101,14 @@
 			   (string= car-list key))))
    (cdr list)))
 
+
 (defun item-member-p (item keys-list)
-  "受け取ったアイテムのcarがkeysに一致しているかを判定する"
+  "受け取ったアイテムのcarがkeyに一致しているかを判定する"
   (when (consp item)
     (let ((car-item (car item)))
       (member car-item
 	      keys-list :test 'equal))))
+
 
 (defun remove-content-if-not (keys-list item)
   "キーに一致しない子ノードを取り除いて返す"
@@ -116,7 +116,6 @@
    #'(lambda (s) (and (consp item)
 		      (item-member-p s keys-list)))
    (cdr item)))
-
 
 
 
@@ -129,6 +128,31 @@
 ;; 			      (fetch-and-parse-from-xml "http://scp-jp.wikidot.com/feed/pages/category/_default%2Cauthor%2Cprotected%2Cwanderers%2Ctheme%2Ccomponent%2Creference%2Cart/order/created_at%20desc/limit/20.xml")))
 
 
+;;;; ------------------------------------------------------------------
+;;;; xml->item obj
+;;;; ------------------------------------------------------------------
+
+(defclass item ()
+  ((title
+    :initarg :title :accessor :title)
+   (url
+    :initarg :url :accessor :url)
+   (description
+    :initarg :description :accessor :description)
+   (timestamp
+    :initarg :timestamp :accessor :timestamp)))
+
+(defclass)
+
+(defgeneric xml->itemobj (obj))
+
+
+
+(defmethod xml->itemobj (obj wikidot-jp))
+
+
+
+(defmethod xml->itemobj (obj sandbox))
 
 
 ;;;; ------------------------------------------------------------------
