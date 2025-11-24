@@ -3,13 +3,13 @@
 
 
 ;;;; --------------------------------------------------------------
-;;;; generic関数の定義 --------------------------------------------
+;;;; generic関数の定義
 ;;;; --------------------------------------------------------------
 
 (defgeneric bot-command (bot-type command arg))
 
 ;;;; --------------------------------------------------------------
-;;;; main-command -------------------------------------------------
+;;;; main-command
 ;;;; --------------------------------------------------------------
 
 (defmacro defcommand (bot-type command arg-let &body body)
@@ -20,13 +20,14 @@
 
 
 (defun make-command-list (lst)
-  (cons 'list (mapcar #'(lambda (arg)
-			  (if (listp arg)
-			      (if (listp (cdr arg))
-				  (make-command-list arg)
-				  `(cons ,(car arg) ,(cdr arg)))
-			      (identity arg)))
-		      lst)))
+  (cons 'list
+	(mapcar #'(lambda (arg)
+		    (if (listp arg)
+			(if (listp (cdr arg))
+			    (make-command-list arg)
+			    `(cons ,(car arg) ,(cdr arg)))
+			(identity arg)))
+		lst)))
 
 
 
