@@ -7,23 +7,23 @@
 
 
 
-(defclass article ()
+(defclass feedconfig ()
   ((link-list
-    :initarg :link-list :accessor :link-list)
+    :initarg :url-list :accessor :url-list)
    (color
     :initarg :color :accessor :color)
    (icon
     :initarg :icon :accessor :icon)))
 
 
-(defclass sandbox (article)
+(defclass sandbox (feedconfig)
   ((color
     :initform 49408)
    (icon
     :initform "<:SB:1088712219656728657>")))
 
 
-(defclass wikidot-jp (article)
+(defclass wikidot-jp (feedconfig)
   ((color
     :initform 15007744)
    (icon
@@ -74,11 +74,11 @@
 
 (defparameter *sandbox-rss-link*
   (make-instance 'sandbox
-		 :link-list '("http://scp-jp-sandbox3.wikidot.com/feed/pages/tags/%2B_criticism-in/category/draft/order/updated_at%20.xml")))
+		 :url-list '("http://scp-jp-sandbox3.wikidot.com/feed/pages/tags/%2B_criticism-in/category/draft/order/updated_at%20.xml")))
 
 (defparameter *wikidot-jp-rss-link*
   (make-instance 'wikidot-jp
-		 :link-list '("http://scp-jp.wikidot.com/feed/pages/category/_default%2Cauthor%2Cprotected%2Cwanderers%2Ctheme%2Ccomponent%2Creference%2Cart/order/created_at%20desc/limit/20.xml")))
+		 :url-list '("http://scp-jp.wikidot.com/feed/pages/category/_default%2Cauthor%2Cprotected%2Cwanderers%2Ctheme%2Ccomponent%2Creference%2Cart/order/created_at%20desc/limit/20.xml")))
 
 
 
@@ -118,7 +118,6 @@
    (cdr item)))
 
 
-
 ;; テストコード
 
 ;; (fetch-and-parse-from-xml "http://scp-jp.wikidot.com/feed/pages/category/_default%2Cauthor%2Cprotected%2Cwanderers%2Ctheme%2Ccomponent%2Creference%2Cart/order/created_at%20desc/limit/20.xml")
@@ -129,7 +128,7 @@
 
 
 ;;;; ------------------------------------------------------------------
-;;;; xml->item obj
+;;;; feedconfig->item obj
 ;;;; ------------------------------------------------------------------
 
 (defclass item ()
@@ -142,17 +141,59 @@
    (timestamp
     :initarg :timestamp :accessor :timestamp)))
 
-(defclass)
 
-(defgeneric xml->itemobj (obj))
+(defgeneric make-itemobject-list (feedconfig)
+  (:documentation "feedconfigを受け取って、itemobjのリストを返す"))
+
+(defmacro feedconfig->itemobj (feed-type &body body)
+  "feedconfigからitemobjを取り出すためのメソッド関数を生成するマクロ"
+  (let ((url-list (gensym)))
+    `(defmethod make-itemobject-list ((feedconfig ,feed-type))
+       (let ((,url-list (:url-list feedconfig)))
+	 (loop for url in ,url-list
+	       append ,@body)))))
 
 
 
-(defmethod xml->itemobj (obj wikidot-jp))
+(defmacro itemlist->itemobjects (item-list for &key title url timestamp description)
+  `(loop for ,for in ,item-list
+	 collect (let ((title ,title)
+		       (url ,url)
+		       (timestamp ,timestamp)
+		       (description ,description))
+		   (make-instance 'item
+				  :title title
+				  :url url
+				  :description description
+				  :timestamp timestamp))))
+
+(feedconfig->itemobj wikidot-jp
+  (let* ((source (fetch-and-parse-from-xml url))
+	 (channel (find-content-if "channel" source))
+	 (items (remove-content-if-not '("item") channel))
+	 (item-list (mapcar
+		     #'(lambda (i)
+			 (remove-content-if-not
+			  '("title" "link" "pubDate"
+			    ("encoded" . "http://purl.org/rss/1.0/modules/content/"))
+			  i))
+		     items)))
+    (itemlist->itemobjects item-list i
+		   :title  (third (first i))
+		   :url  (third (second i))
+		   :timestamp (third (third i))
+		   :description (third (fourth i)))))
+
+(feedconfig->itemobj sandbox
+  (let ((source (fetch-and-parse-from-xml url)))))
 
 
 
-(defmethod xml->itemobj (obj sandbox))
+;; テストコード
+
+;; (defparameter *items* (make-itemobject-list *wikidot-jp-rss-link*))
+
+;; (mapcar #':timestamp *items*)
 
 
 ;;;; ------------------------------------------------------------------
