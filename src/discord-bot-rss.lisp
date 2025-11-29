@@ -154,8 +154,8 @@
 	       append ,@body)))))
 
 
-
 (defmacro itemlist->itemobjects (item-list for &key title url timestamp description)
+  "item-listを受け取り、itemobjectのリストを返す"
   `(loop for ,for in ,item-list
 	 collect (let ((title ,title)
 		       (url ,url)
@@ -166,6 +166,7 @@
 				  :url url
 				  :description description
 				  :timestamp timestamp))))
+
 
 (feedconfig->itemobj wikidot-jp
   (let* ((source (fetch-and-parse-from-xml url))
@@ -178,22 +179,38 @@
 			    ("encoded" . "http://purl.org/rss/1.0/modules/content/"))
 			  i))
 		     items)))
+
     (itemlist->itemobjects item-list i
-		   :title  (third (first i))
-		   :url  (third (second i))
-		   :timestamp (third (third i))
-		   :description (third (fourth i)))))
+			   :title  (third (first i))
+			   :url  (third (second i))
+			   :timestamp (third (third i))
+			   :description (third (fourth i)))))
 
 (feedconfig->itemobj sandbox
-  (let ((source (fetch-and-parse-from-xml url)))))
+  (let* ((source (fetch-and-parse-from-xml url))
+	 (channel (find-content-if "channel" source))
+	 (items (remove-content-if-not '("item") channel))
+	 (item-list (mapcar
+		     #'(lambda (i)
+			 (remove-content-if-not
+			  '("title" "link" "pubDate"
+			    ("encoded" . "http://purl.org/rss/1.0/modules/content/"))
+			  i))
+		     items)))
+    
+    (itemlist->itemobjects item-list i
+			   :title  (third (first i))
+			   :url  (third (second i))
+			   :timestamp (third (third i))
+			   :description (third (fourth i)))))
 
 
 
 ;; テストコード
 
-;; (defparameter *items* (make-itemobject-list *wikidot-jp-rss-link*))
+(defparameter *items* (make-itemobject-list *sandbox-rss-link*))
 
-;; (mapcar #':timestamp *items*)
+(mapcar #':url *items*)
 
 
 ;;;; ------------------------------------------------------------------
@@ -270,5 +287,6 @@
 
 (defcommand :rss :save-queue arg
   (output-key-plist-to-data *key-queue*))
+
 
 
