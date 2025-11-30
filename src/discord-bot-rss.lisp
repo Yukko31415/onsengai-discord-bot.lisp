@@ -13,7 +13,10 @@
    (color
     :initarg :color :accessor :color)
    (icon
-    :initarg :icon :accessor :icon)))
+    :initarg :icon :accessor :icon)
+   (channel
+    :initform 1406525194289287311
+    :accessor :channel)))
 
 
 (defclass sandbox (feedconfig)
@@ -38,7 +41,10 @@
 
 
 
+
+
 (defparameter *queue-list-filepath* "~/common-lisp/discord-bot/data/rss-queue-list.txt")
+
 
 
 (defun set-seen-items (pathname)
@@ -51,7 +57,7 @@
 	   (keys-list (read content)))
 
       (dolist (key keys-list)
-	(setf (gethash key hash-table) t)
+	(setf (gethash key hash-table) key)
 	(push-queue key queue))
 
       (defparameter *seen-items* hash-table)
@@ -79,6 +85,9 @@
 (defparameter *wikidot-jp-rss-link*
   (make-instance 'wikidot-jp
 		 :url-list '("http://scp-jp.wikidot.com/feed/pages/category/_default%2Cauthor%2Cprotected%2Cwanderers%2Ctheme%2Ccomponent%2Creference%2Cart/order/created_at%20desc/limit/20.xml")))
+
+
+(defparameter *feedconfig-list* (list *sandbox-rss-link* *wikidot-jp-rss-link*))
 
 
 
@@ -118,10 +127,8 @@
    (cdr item)))
 
 
-;; テストコード
-
+;; testcode
 ;; (fetch-and-parse-from-xml "http://scp-jp.wikidot.com/feed/pages/category/_default%2Cauthor%2Cprotected%2Cwanderers%2Ctheme%2Ccomponent%2Creference%2Cart/order/created_at%20desc/limit/20.xml")
-
 ;; (remove-content-if-not '("item") (find-content-if
 ;; 			      "channel"
 ;; 			      (fetch-and-parse-from-xml "http://scp-jp.wikidot.com/feed/pages/category/_default%2Cauthor%2Cprotected%2Cwanderers%2Ctheme%2Ccomponent%2Creference%2Cart/order/created_at%20desc/limit/20.xml")))
@@ -214,7 +221,7 @@
 
 
 ;;;; ------------------------------------------------------------------
-;;;; send-rss-message-to-descord
+;;;; format-itemobj
 ;;;; ------------------------------------------------------------------
 
 
@@ -231,11 +238,11 @@
 (defgeneric format-itemobj (feedconfig itemobj)
   (:documentation "feedconfigとitemobjを受け取り、メッセージ送信用にフォーマットされたリストを返す"))
 
+
 (defmethod format-itemobj ((feedconfig wikidot-jp) itemobj)
   (let ((color (:color feedconfig))
 	(icon (:icon feedconfig)))
     (format-rss-message itemobj color icon "")))
-
 
 
 (defmacro search-text-from-node (itemobj tag sub-sequences-list)
@@ -253,52 +260,79 @@
        (text))))
 
 
-
 (defmethod format-itemobj ((feedconfig sandbox) itemobj)
   (let ((color (:color feedconfig))
 	(icon (:icon feedconfig))
-	(description (search-text-from-node
-		      itemobj "strong" ("付与予定タグ:" "付与予定タグ: "))))
-    (format-rss-message itemobj color icon description)))
+	(description (aref (search-text-from-node
+			    itemobj "strong" ("付与予定タグ:" "付与予定タグ: "))
+			    0)))
+    (list (:timestamp itemobj) (format-rss-message itemobj color icon description))))
 
-(format-itemobj *sandbox-rss-link* (fifth *items*))
 
 
-;; (search)
-
-;; (lquery:$ (initialize (:description (fifth *items*)))
-;;   "strong"
-;;   (serialize))
-
-;; (defun send-rss-message-to-descord (feedconfig)
-;;   (let ((formatted-message (format-itemobj feedconfig (make-itemobject-list feedconfig))))))
-
+;; testcode
+;; (let ((message (format-itemobj *sandbox-rss-link* (fifth *items*))))
+;;   (run-command  (:post :post-message 1406525194289287311 message)))
 
 
 ;;;; ------------------------------------------------------------------
-;;;; メインループ
+;;;; send-rss-message-to-descord
 ;;;; ------------------------------------------------------------------
 
 
-
-
-(defun add-data (key value)
+(defun add-data (key)
   "新しいデータを追加し、上限を超えていれば最も古いデータを削除する"
-  ;; --- ステップ1: 新しいデータを追加 ---
-  (setf (gethash key *seen-items*) value)
+  ;; ステップ1: 新しいデータを追加
+  (setf (gethash key *seen-items*) key)
   ;; 新しいキーをキューの末尾に追加
   (push-queue key *key-queue*)
-
-  ;; --- ステップ2: 上限を超えているかチェック ---
+  
+  ;; 上限を超えているかチェック
   (loop
     #:do (if (> (queue-count *key-queue*) *max-items*)
-	     ;; --- ステップ3: 超えていれば、一番古いデータを削除 ---
+	     ;; 超えていれば、一番古いデータを削除
 	     ;; キューの先頭から一番古いキーを取得
 	     (let ((oldest-key (pop-queue *key-queue*)))
 	       ;; ハッシュテーブルからそのキーのデータを削除
-	       (remhash oldest-key *seen-items*)
-	       (format t "--- 上限を超えたため、一番古いキー「~A」を削除しました ---~%" oldest-key))
+	       (remhash oldest-key *seen-items*))
 	     (return))))
+
+(defun seen-items-p (key)
+  "urlをキーとして受け取り、それが既に送信したものかを確認する述語"
+  (when (gethash key *seen-items*) t))
+
+
+(defun send-rss-message-to-descord (channel feedconfig itemobj)
+  "seen-items-pがnilの時、メッセージを送信する"
+  (let ((url (:url itemobj)))
+    (unless (seen-items-p url)
+      (progn (add-data url)
+	     (let ((message (format-itemobj feedconfig itemobj)))
+	       (run-command (:post :post-message channel message)))))))
+
+
+
+
+;;;; ------------------------------------------------------------------
+;;;; main
+;;;; ------------------------------------------------------------------
+
+
+(defun check-and-send-rss (feedconfig)
+  (let ((itemobj-list (make-itemobject-list feedconfig))
+	(channel (:channel feedconfig)))
+    (mapc
+     #'(lambda (item) (send-rss-message-to-descord channel feedconfig item)) itemobj-list)))
+
+
+(defun main (feedconfig-list)
+  (mapc #'check-and-send-rss feedconfig-list))
+
+
+;;;; ------------------------------------------------------------------
+;;;; utils
+;;;; ------------------------------------------------------------------
+
 
 
 (defun output-key-plist-to-data (queue)
@@ -316,9 +350,6 @@
 
 
 
-
-
-
 ;;;; --------------------------------------------------------------
 ;;;; bot-commands
 ;;;; --------------------------------------------------------------
@@ -326,14 +357,11 @@
 
 
 (defcommand :rss :post arg
-  )
+  (main *feedconfig-list*))
 
 (defcommand :rss :initialize arg
-  (set-bot-token *token-filepath*)
   (set-seen-items *queue-list-filepath*))
 
 (defcommand :rss :save-queue arg
   (output-key-plist-to-data *key-queue*))
-
-
 
