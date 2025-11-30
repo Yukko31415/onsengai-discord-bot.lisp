@@ -48,7 +48,7 @@
   (dolist (i arg)
     (let ((bot-type (first i))
 	  (command (second i))
-	  (arg (cdr i)))
+	  (arg (cddr i)))
       (bot-command bot-type command arg))))
 
 
