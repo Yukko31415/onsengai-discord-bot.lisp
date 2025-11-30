@@ -152,6 +152,7 @@
 (defgeneric make-itemobject-list (feedconfig)
   (:documentation "feedconfigを受け取って、itemobjのリストを返す"))
 
+
 (defmacro feedconfig->itemobj (feed-type &body body)
   "feedconfigからitemobjを取り出すためのメソッド関数を生成するマクロ
    ! urlがすでに束縛されている変数として機能している"
@@ -176,16 +177,19 @@
 				  :timestamp timestamp))))
 
 
+(defun extract-item-list (keys-list item-list)
+  "xmlパースされたitemのリストを受け取り、kyes-listに該当するリストのみを抽出する"
+  (mapcar #'(lambda (i) (remove-content-if-not keys-list i))
+	  item-list))
+
+
 (feedconfig->itemobj wikidot-jp
   (let* ((source (fetch-and-parse-from-xml url))
 	 (channel (find-content-if "channel" source))
 	 (items (remove-content-if-not '("item") channel))
-	 (item-list (mapcarx
-		     #'(lambda (i)
-			 (remove-content-if-not
-			  '("title" "link" "pubDate"
-			    ("encoded" . "http://purl.org/rss/1.0/modules/content/"))
-			  i))
+	 (item-list (extract-item-list
+		     '("title" "link" "pubDate"
+		       ("encoded" . "http://purl.org/rss/1.0/modules/content/"))
 		     items)))
 
     (itemlist->itemobjects item-list i
@@ -194,16 +198,14 @@
 			   :timestamp (third (third i))
 			   :description (third (fourth i)))))
 
+
 (feedconfig->itemobj sandbox
   (let* ((source (fetch-and-parse-from-xml url))
 	 (channel (find-content-if "channel" source))
 	 (items (remove-content-if-not '("item") channel))
-	 (item-list (mapcar
-		     #'(lambda (i)
-			 (remove-content-if-not
-			  '("title" "link" "pubDate"
-			    ("encoded" . "http://purl.org/rss/1.0/modules/content/"))
-			  i))
+	 (item-list (extract-item-list
+		     '("title" "link" "pubDate"
+		       ("encoded" . "http://purl.org/rss/1.0/modules/content/"))
 		     items)))
     
     (itemlist->itemobjects item-list i
@@ -213,10 +215,8 @@
 			   :description (third (fourth i)))))
 
 
-;; テストコード
-
+;; testcode
 ;; (defparameter *items* (make-itemobject-list *sandbox-rss-link*))
-
 ;; (mapcar #':url *items*)
 
 
@@ -242,7 +242,7 @@
 (defmethod format-itemobj ((feedconfig wikidot-jp) itemobj)
   (let ((color (:color feedconfig))
 	(icon (:icon feedconfig)))
-    (format-rss-message itemobj color icon "")))
+    (list (:timestamp itemobj) (format-rss-message itemobj color icon ""))))
 
 
 (defmacro search-text-from-node (itemobj tag sub-sequences-list)
@@ -276,7 +276,7 @@
 
 
 ;;;; ------------------------------------------------------------------
-;;;; send-rss-message-to-descord
+;;;; send-rss-message-to-discord
 ;;;; ------------------------------------------------------------------
 
 
@@ -297,12 +297,13 @@
 	       (remhash oldest-key *seen-items*))
 	     (return))))
 
+
 (defun seen-items-p (key)
   "urlをキーとして受け取り、それが既に送信したものかを確認する述語"
   (when (gethash key *seen-items*) t))
 
 
-(defun send-rss-message-to-descord (channel feedconfig itemobj)
+(defun send-rss-message-to-discord (channel feedconfig itemobj)
   "seen-items-pがnilの時、メッセージを送信する"
   (let ((url (:url itemobj)))
     (unless (seen-items-p url)
@@ -322,7 +323,7 @@
   (let ((itemobj-list (make-itemobject-list feedconfig))
 	(channel (:channel feedconfig)))
     (mapc
-     #'(lambda (item) (send-rss-message-to-descord channel feedconfig item)) itemobj-list)))
+     #'(lambda (item) (send-rss-message-to-discord channel feedconfig item)) itemobj-list)))
 
 
 (defun main (feedconfig-list)
@@ -354,8 +355,6 @@
 ;;;; bot-commands
 ;;;; --------------------------------------------------------------
 
-
-
 (defcommand :rss :post arg
   (main *feedconfig-list*))
 
@@ -364,4 +363,8 @@
 
 (defcommand :rss :save-queue arg
   (output-key-plist-to-data *key-queue*))
+
+
+;; testcode
+;; (run-command (:rss :post))
 
