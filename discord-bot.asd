@@ -5,7 +5,6 @@
   :author "yukko31415@gmail.com"
   :licence "Public Domain"
   :depends-on ("dexador"
-	       "drakma"
 	       "cl-json"
 	       "xmls"
 	       "babel"
