@@ -146,7 +146,8 @@
   (:documentation "feedconfigを受け取って、itemobjのリストを返す"))
 
 (defmacro feedconfig->itemobj (feed-type &body body)
-  "feedconfigからitemobjを取り出すためのメソッド関数を生成するマクロ"
+  "feedconfigからitemobjを取り出すためのメソッド関数を生成するマクロ
+   ! urlがすでに束縛されている変数として機能している"
   (let ((url-list (gensym)))
     `(defmethod make-itemobject-list ((feedconfig ,feed-type))
        (let ((,url-list (:url-list feedconfig)))
@@ -172,7 +173,7 @@
   (let* ((source (fetch-and-parse-from-xml url))
 	 (channel (find-content-if "channel" source))
 	 (items (remove-content-if-not '("item") channel))
-	 (item-list (mapcar
+	 (item-list (mapcarx
 		     #'(lambda (i)
 			 (remove-content-if-not
 			  '("title" "link" "pubDate"
@@ -205,32 +206,78 @@
 			   :description (third (fourth i)))))
 
 
-
 ;; テストコード
 
-(defparameter *items* (make-itemobject-list *sandbox-rss-link*))
+;; (defparameter *items* (make-itemobject-list *sandbox-rss-link*))
 
-(mapcar #':url *items*)
+;; (mapcar #':url *items*)
+
+
+;;;; ------------------------------------------------------------------
+;;;; send-rss-message-to-descord
+;;;; ------------------------------------------------------------------
+
+
+(defun format-rss-message (itemobj color icon description)
+  "RSSアイテムをDiscordのEmbedデータ（連想リスト）に変換する"
+  `((#:title . ,(format nil "~a ~a" icon (:title itemobj)))
+    (#:description . ,description)
+    (#:url . ,(:url itemobj))
+    (#:color . ,color) ; 色を16進数の #3498DB (青色) から10進数に変換したもの
+    (#:timestamp . ,(local-time:format-timestring nil (local-time:now))) ; 現在時刻のタイムスタンプ
+    (#:footer . (("text" . "RSS Feed Bot")))))
+
+
+(defgeneric format-itemobj (feedconfig itemobj)
+  (:documentation "feedconfigとitemobjを受け取り、メッセージ送信用にフォーマットされたリストを返す"))
+
+(defmethod format-itemobj ((feedconfig wikidot-jp) itemobj)
+  (let ((color (:color feedconfig))
+	(icon (:icon feedconfig)))
+    (format-rss-message itemobj color icon "")))
+
+
+
+(defmacro search-text-from-node (itemobj tag sub-sequences-list)
+  "指定したタグ内のテキストを探し、一致したものを返す"
+  (let* ((text (gensym))
+	 (node (gensym))
+	 (search-list (mapcar #'(lambda (sub-sequence) (list 'search sub-sequence text))
+			      sub-sequences-list)))
+    `(lquery:$ (initialize (:description ,itemobj))
+       ,tag
+       (filter (lambda (,node)
+		 (let ((,text (plump:text ,node)))
+		   (or ,@search-list))))
+       (parent)
+       (text))))
+
+
+
+(defmethod format-itemobj ((feedconfig sandbox) itemobj)
+  (let ((color (:color feedconfig))
+	(icon (:icon feedconfig))
+	(description (search-text-from-node
+		      itemobj "strong" ("付与予定タグ:" "付与予定タグ: "))))
+    (format-rss-message itemobj color icon description)))
+
+(format-itemobj *sandbox-rss-link* (fifth *items*))
+
+
+;; (search)
+
+;; (lquery:$ (initialize (:description (fifth *items*)))
+;;   "strong"
+;;   (serialize))
+
+;; (defun send-rss-message-to-descord (feedconfig)
+;;   (let ((formatted-message (format-itemobj feedconfig (make-itemobject-list feedconfig))))))
+
 
 
 ;;;; ------------------------------------------------------------------
 ;;;; メインループ
 ;;;; ------------------------------------------------------------------
-
-
-
-(defun format-rss-message (item color icon)
-  "RSSアイテムをDiscordのEmbedデータ（連想リスト）に変換する"
-  `(("title" . ,(format nil "~a ~a" icon (getf item :title)))
-    ("description" . ,(let ((desc (getf item :description)))
-			;; descriptionが長すぎる場合に400文字で切り詰める
-			(if (> (length desc) 400)
-			    (concatenate 'string (subseq desc 0 400) "...")
-			    desc)))
-    ("url" . ,(getf item :link))
-    ("color" . ,color) ; 色を16進数の #3498DB (青色) から10進数に変換したもの
-    ("timestamp" . ,(local-time:format-timestring nil (local-time:now))) ; 現在時刻のタイムスタンプ
-    ("footer" . (("text" . "RSS Feed Bot")))))
 
 
 
