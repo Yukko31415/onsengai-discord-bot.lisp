@@ -7,6 +7,7 @@
   :depends-on ("dexador"
 	       "cl-json"
 	       "xmls"
+	       "jonathan"
 	       "babel"
 	       "chipz"
 	       "puri"
@@ -16,7 +17,8 @@
 	       "alexandria"
 	       "bordeaux-threads"
 	       "lparallel"
-	       "slynk")
+	       "slynk"
+	       "log4cl")
   :build-operation "program-op"
   :build-pathname "discord-bot"
   :pathname #p"src/"
