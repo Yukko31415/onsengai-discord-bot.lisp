@@ -27,7 +27,6 @@
 
 
 
-
 (defun random-in-range (min max)
   "Generates a random integer within the range [min, max]."
   (+ min (random (1+ (- max min)))))
@@ -37,3 +36,5 @@
   (progn (initialize)
 	 (boot)
 	 (slynk:create-server :port (random-in-range 1000 65535) :dont-close t)))
+
+(defun end ())
