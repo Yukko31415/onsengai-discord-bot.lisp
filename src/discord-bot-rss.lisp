@@ -2,7 +2,7 @@
 
 
 ;;;; ------------------------------------------------------------------
-;;;; classの設定
+;;;; feedconfig
 ;;;; ------------------------------------------------------------------
 
 
@@ -45,7 +45,6 @@
 (defparameter *queue-list-filepath*
   (merge-pathnames "common-lisp/discord-bot/data/rss-queue-list.txt"
 		   (user-homedir-pathname)))
-
 
 
 (defparameter *key-queue* (make-queue))
@@ -123,14 +122,10 @@
    :key #'get-tag))
 
 
-;; test
-;; (remove-content-if-not ("item") (find-content "channel" (fetch-and-parse-from-xml "http://scp-jp-sandbox3.wikidot.com/feed/pages/tags/%2B_criticism-in/category/draft/order/updated_at%20.xml")))
-
-
-
 ;;;; ------------------------------------------------------------------
 ;;;; feedconfig->item obj
 ;;;; ------------------------------------------------------------------
+
 
 
 (defclass item ()
@@ -143,8 +138,11 @@
    (timestamp
     :initarg :timestamp :accessor item-timestamp)))
 
+
+
 (defgeneric make-itemobject-list (feedconfig)
   (:documentation "feedconfigを受け取って、itemobjのリストを返す"))
+
 
 
 (defmacro feedconfig->itemobj ((feed-type url-for) &body body)
@@ -187,7 +185,7 @@
 		     '("title" "link" "pubDate" "encoded")
 		     items)))
 
-    (log:info "~a" items)
+    (log:info "~a~%" items)
 
     (mapcar #'(lambda (i)
 		(make-instance 'item
@@ -198,9 +196,7 @@
 	    item-list)))
 
 
-;; testcode
-;; (defparameter *items* (make-itemobject-list *sandbox-rss-link*))
-;; (mapcar #'item-url *items*)
+
 
 
 ;;;; ------------------------------------------------------------------
@@ -248,6 +244,7 @@
        (text))))
 
 
+
 (defmethod format-itemobj ((feedconfig sandbox) itemobj)
   (log:info "~a" (item-description itemobj))
   (let* ((color (feedconfig-color feedconfig))
@@ -259,15 +256,9 @@
 			    description
 			    ""))))
     
-    (log:info "~s~%" %description)
-    
     (list (item-timestamp itemobj)
 	  (format-rss-message itemobj color icon description))))
 
-
-;; testcode
-;; (let ((message (format-itemobj *sandbox-rss-link* (fifth *items*))))
-;;   (run-command  (:post :post-message 1406525194289287311 message)))
 
 
 
@@ -295,7 +286,7 @@
 
 
 (defun seen-items-p (key)
-  "urlをキーとして受け取り、それが既に送信したものかを確認する述語"
+  "urlをキーとして受け取り、それが既に送信したものかを確認する"
   (when (gethash key *seen-items*) t))
 
 
@@ -369,3 +360,4 @@
   (setf *key-queue* (make-queue))
   (setf *seen-items* (make-hash-table :test 'equal))
   (run-command (:rss :post)))
+

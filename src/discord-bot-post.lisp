@@ -37,12 +37,16 @@
   "キーワードを受け取り、小文字化した新しいキーワードを返す"
   (intern (string-downcase (symbol-name k)) :keyword))
 
+
+
 (defun make-embeds (plist)
   "carにあるkeywordを小文字にする"
   (when plist
     (let ((x (car plist)))
       (cons (if (keywordp x) (keyword-downcase x) x)
 	    (make-embeds (cdr plist))))))
+
+
 
 (defmethod %make-content ((content cons))
   (let ((plists (mapcar #'make-embeds content)))
