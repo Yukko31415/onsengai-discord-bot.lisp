@@ -33,6 +33,7 @@
 	(key (gensym)))
     `(defmethod bot-command
 	 ((,type (eql ,bot-type)) (,key (eql ,command)) &rest ,arg-let)
+       (declare (ignorable ,arg-let))
        ,@body)))
 
 
@@ -67,4 +68,6 @@
 (defcommand :main :test num
   (format t "this is test. num is ~a~%" (car num)))
 
+(defcommand :main :room arg
+  (room))
 
