@@ -29,7 +29,8 @@
 	       (:file "discord-bot-post")
 	       (:file "discord-bot-rss")
 	       (:file "discord-bot-main"))
-  :entry-point "discord-bot-main:start")
+  :entry-point "discord-bot-main:main")
+
 
 
 
