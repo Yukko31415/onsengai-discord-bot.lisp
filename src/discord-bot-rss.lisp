@@ -1,44 +1,24 @@
 (in-package #:discord-bot-rss)
 
 
+<<<<<<< HEAD
 ;;;; ------------------------------------------------------------------
 ;;;; feedconfig
 ;;;; ------------------------------------------------------------------
+=======
+>>>>>>> sub
 
 
 
-(defclass feedconfig ()
-  ((url-list
-    :initarg :url-list :accessor feedconfig-url-list)
-   (color
-    :initarg :color :accessor feedconfig-color)
-   (icon
-    :initarg :icon :accessor feedconfig-icon)
-   (channel
-    :initform 1406525194289287311
-    :accessor feedconfig-channel)))
+;;
+;; config
 
 
-(defclass sandbox (feedconfig)
-  ((color
-    :initform 49408)
-   (icon
-    :initform "<:SB:1088712219656728657>")))
+(defparameter *channel-id* "1406525194289287311" "投稿先のDiscordチャンネルID")
 
+(defvar *interval* 300 "RSSフィードのチェック間隔（秒）")
 
-(defclass wikidot-jp (feedconfig)
-  ((color
-    :initform 15007744)
-   (icon
-    :initform "<:Pos:1088712480865394700>")))
-
-
-
-
-;;;; ------------------------------------------------------------------
-;;;; *seen-items*の初期設定
-;;;; ------------------------------------------------------------------
-
+(defparameter *max-items* 30)
 
 
 
@@ -47,86 +27,139 @@
 		   (user-homedir-pathname)))
 
 
+<<<<<<< HEAD
 (defparameter *key-queue* (make-queue))
+=======
+(rss-parser:define-rss-fetcher sandbox
+  "http://scp-jp-sandbox3.wikidot.com/feed/pages/tags/%2B_criticism-in/category/draft/order/updated_at%20.xml"
+  ("title" "pubDate" "description" "guid")
+  :key "guid"
+  :size *max-items*)
 
+>>>>>>> sub
 
-(defparameter *seen-items* (make-hash-table :test 'equal))
+(rss-parser:define-rss-fetcher wikidot-jp
+  "http://scp-jp.wikidot.com/feed/pages/category/_default%2Cauthor%2Cprotected%2Cwanderers%2Ctheme%2Ccomponent%2Creference%2Cart/order/created_at%20desc/limit/20.xml"
+  ("title" "pubDate" "description" "guid")
+  :key "guid"
+  :size *max-items*)
 
-(defun set-seen-items (pathname)
-  "閲覧したページのリンクを保存するハッシュテーブルとキューを作成する"
-  (with-open-file (content pathname
-			   :direction :input)
-
-    (let* ((hash-table (make-hash-table :test 'equal))
-	   (queue (make-queue))
-	   (keys-list (read content)))
-
-      (dolist (key keys-list)
-	(setf (gethash key hash-table) key)
-	(push-queue key queue))
-
-      
-      (setf *key-queue* queue)
-      (setf *seen-items* hash-table))))
+(defparameter *fetch-list* (mapcar #'rss-parser:make-rss-fetcher '(sandbox wikidot-jp)))
 
 
 
-;;;; ------------------------------------------------------------------
-;;;; グローバル変数と設定
-;;;; ------------------------------------------------------------------
+
+;;
+;; post-item
 
 
-(defparameter *channel-id* "1121439803213365279" "投稿先のDiscordチャンネルID")
+(defgeneric post-item (item))
 
-(defvar *check-interval* 300 "RSSフィードのチェック間隔（秒）")
-
-(defparameter *max-items* 100)
-
-(defparameter *sandbox-rss-link*
-  (make-instance 'sandbox
-		 :url-list '("http://scp-jp-sandbox3.wikidot.com/feed/pages/tags/%2B_criticism-in/category/draft/order/updated_at%20.xml")))
-
-(defparameter *wikidot-jp-rss-link*
-  (make-instance 'wikidot-jp
-		 :url-list '("http://scp-jp.wikidot.com/feed/pages/category/_default%2Cauthor%2Cprotected%2Cwanderers%2Ctheme%2Ccomponent%2Creference%2Cart/order/created_at%20desc/limit/20.xml")))
+(defmethod post-item :around (item)
+  (sleep 1)
+  (call-next-method))
 
 
-(defparameter *feedconfig-list* (list *sandbox-rss-link* *wikidot-jp-rss-link*))
+(defmethod post-item ((item sandbox))
+  (let ((title (title item))
+	(pubdate (pubdate item))
+	(description (description item))
+	(guid (guid item)))
+    (send-discord-message
+     *channel-id* discord-bot-token:*bot-token*
+     :content pubdate
+     :embeds ((embed :title (format nil "<:SB:1088712219656728657> ~A" title)
+		     :url guid
+		     :color 49408
+		     :timestamp (local-time:format-rfc3339-timestring nil (local-time:now))
+		     :footer (footer "RSS Bot"))))))
 
 
 
-;;;; ------------------------------------------------------------------
-;;;; RSSフィードの取得とパース
-;;;; ------------------------------------------------------------------
-
-(defun fetch-and-parse-from-xml (url)
-  "リンク先からxmlを取得し、リストにして返す"
-  (xmls:parse-to-list (dex:get url)))
-
-(defun get-tag (arg)
-  (if (consp arg)
-      (get-tag (car arg))
-      arg))
-
-(defun find-content (key list)
-  "受け取ったリストの子ノードを解析し、一致したキーを持つリストを返す"
-  (find key (cdr list)
-        :test #'string=
-        :key #'get-tag))
-
-(defun remove-content-if-not (keys-list item)
-  "キーに一致しない子ノードを取り除いて返す"
-  (remove-if-not
-   #'(lambda (s) (member s keys-list :test #'string=))
-   item
-   :key #'get-tag))
+(defmethod post-item ((item wikidot-jp))
+  (let ((title (title item))
+	(pubdate (pubdate item))
+	(description (description item))
+	(guid (guid item)))
+    (send-discord-message
+     *channel-id* discord-bot-token:*bot-token*
+     :content pubdate
+     :embeds ((embed :title (format nil "<:Pos:1088712480865394700> ~A" title)
+		     :url guid
+		     :color 15007744
+		     :timestamp (local-time:format-rfc3339-timestring nil (local-time:now))
+		     :footer (footer "RSS Bot"))))))
 
 
+(defun run-rss  ()
+  (mapcar #'post-item
+	  (nreverse (loop :for fetcher :in *fetch-list*
+			  :append (rss-parser:fetch fetcher)))))
+
+
+(defun save-cache (&optional stream)
+  (let ((*print-readably* t))
+    (flet ((print-cache (fetcher)
+	     (rss-parser:print-rss-cache-queue fetcher stream)))
+      (mapc #'print-cache *fetch-list*))))
+
+
+
+(define-condition start-fetch (condition)
+  ((times :initarg :times :reader fetch-times)))
+
+
+
+
+(defun rss-loop (rss-bot interval &aux (times 0))
+  (declare (fixnum interval))
+  (loop :do (restart-case
+		(progn (incf times)
+		       (log:info "~A回目のループ" times)
+		       (signal 'start-fetch :times times)
+		       (run-rss)
+		       (when (= (mod times 5) 0)
+			 (with-open-file
+			     (stream *queue-list-filepath* :direction :output)
+			   (save-cache stream)))
+		       (sleep interval))
+	      (loop-finish ()
+		:report "メインループを終了する"
+		(log:info "ループを終了します")
+		(return (setf (rss-bot-activep rss-bot) nil)))
+	      (retry ()
+		:report "リトライを行う"
+		(log:info "リトライを行います")
+		nil))))
+
+<<<<<<< HEAD
 ;;;; ------------------------------------------------------------------
 ;;;; feedconfig->item obj
 ;;;; ------------------------------------------------------------------
+=======
+
+(defun loop-handler (rss-bot)
+  (setf (rss-bot-activep rss-bot) t)
+  (handler-bind ((start-fetch
+		   #'(lambda (c) (declare (ignore c))
+		       (if (rss-bot-enablep rss-bot)
+			   nil
+			   (invoke-restart 'loop-finish))))
+		 (error
+		   #'(lambda (c) (log:warn "Error: ~a" c)
+		       (invoke-restart 'retry))))
+    (rss-loop rss-bot *interval*)))
 
 
+>>>>>>> sub
+
+(defclass rss-bot ()
+  ((activep :initform nil
+	    :accessor rss-bot-activep)
+   (enablep :initform nil
+	    :accessor rss-bot-enablep)))
+
+<<<<<<< HEAD
 
 (defclass item ()
   ((title
@@ -152,31 +185,38 @@
        (let ((,url-list (feedconfig-url-list feedconfig)))
 	 (loop for ,url-for in ,url-list
 	       append ,@body)))))
+=======
+
+;; 
+;; handler
 
 
-(defun extract-item-list (keys-list item-list)
-  "xmlパースされたitemのリストを受け取り、kyes-listに該当するリストのみを抽出する"
-  (mapcar #'(lambda (i) (remove-content-if-not keys-list i))
-	  item-list))
+(defun make-rss-bot ()
+  "rss-botインスタンスを生成する"
+  (make-instance 'rss-bot))
+>>>>>>> sub
 
 
-(feedconfig->itemobj (wikidot-jp url)
-  (let* ((source (fetch-and-parse-from-xml url))
-	 (channel (find-content "channel" source))
-	 (items (remove-content-if-not '("item") channel))
-	 (item-list (extract-item-list
-		     '("title" "link" "pubDate" "encoded")
-		     items)))
-
-    (mapcar #'(lambda (i)
-		(make-instance 'item
-			       :title (third (first i))
-			       :url (third (second i))
-			       :description (third (fourth i))
-			       :timestamp (third (third i))))
-	    item-list)))
+(defun stop (rss-bot)
+  ""
+  (declare (rss-bot rss-bot))
+  (setf  (rss-bot-enablep rss-bot) nil))
 
 
+(defun run (rss-bot)
+  (setf (rss-bot-enablep rss-bot) t)
+  (if (rss-bot-activep rss-bot)
+      nil
+      (progn
+	(with-open-file (stream *queue-list-filepath*)
+	  (loop :for fetcher :in *fetch-list*
+		:do (rss-parser:initialize-fetcher-cache
+		     fetcher (read stream))))
+	(bt:make-thread #'(lambda () (loop-handler rss-bot))))))
+
+
+
+<<<<<<< HEAD
 (feedconfig->itemobj (sandbox url)
   (let* ((source (fetch-and-parse-from-xml url))
 	 (channel (find-content "channel" source))
@@ -202,23 +242,15 @@
 ;;;; ------------------------------------------------------------------
 ;;;; format-itemobj
 ;;;; ------------------------------------------------------------------
+=======
+>>>>>>> sub
 
 
 
 
-(defun format-rss-message (itemobj color icon description)
-  "RSSアイテムをDiscordのEmbedデータ（連想リスト）に変換する"
-  `(:title ,(format nil "~a ~a" icon (item-title itemobj))
-    :description ,description
-    :url ,(item-url itemobj)
-    :color ,(write-to-string color)
-    :timestamp ,(local-time:format-timestring nil (local-time:now))
-    :footer (:|text| "RSS Feed Bot")))
 
 
-(defgeneric format-itemobj (feedconfig itemobj)
-  (:documentation "feedconfigとitemobjを受け取り、メッセージ送信用にフォーマットされたリストを返す"))
-
+<<<<<<< HEAD
 
 (defmethod format-itemobj ((feedconfig wikidot-jp) itemobj)
   (let ((color (feedconfig-color feedconfig))
@@ -361,3 +393,5 @@
   (setf *seen-items* (make-hash-table :test 'equal))
   (run-command (:rss :post)))
 
+=======
+>>>>>>> sub

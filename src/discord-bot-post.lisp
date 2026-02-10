@@ -8,11 +8,6 @@
 ;;;; Discord API連携
 ;;;; ------------------------------------------------------------------
 
-(defun get-bot-token ()
- (with-open-file (token (pathname "~/common-lisp/discord-bot/data/token.txt")
-			   :direction :input)
-   (read-line token)))
-
 
 (defun make-header (bot-token content-type)
   "bot-tokenとcontent-typeを受け取り、ヘッダーのリストを生成して返す"
@@ -21,22 +16,16 @@
 
 
 
-
-(defgeneric %make-content (content)
-  (:documentation "文字列、リストを受け取ってペイロードを返す"))
-
-(defmethod %make-content ((content string))
+(defun make-content (content)
   `(:|content| ,content))
 
-(defmethod %make-content ((content number))
-  `(:|content| ,(write-to-string content)))
 
 
-
-(defun keyword-downcase (k)
+(defun keyword-downcase (keyword)
   "キーワードを受け取り、小文字化した新しいキーワードを返す"
-  (intern (string-downcase (symbol-name k)) :keyword))
+  (intern (string-downcase (symbol-name keyword)) :keyword))
 
+<<<<<<< HEAD
 
 
 (defun make-embeds (plist)
@@ -54,54 +43,71 @@
     (log:info "plists is ~s~%" plists)
     
     `(:|embeds| ,plists)))
+=======
+(defun make-plist-for-embeds (plist)
+  (loop :for (key content) :on plist :by #'cddr 
+	:append (list (keyword-downcase key) content)))
+>>>>>>> sub
 
 
 
-(defun make-content (content)
-  "型を受け取って文字列や埋め込みに変換する"
-  (typecase content
-    ((or number string)
-     (%make-content content))
-    (cons
-     (append (%make-content (first content))
-	     (%make-content (rest content))))))
+(defun embed (&rest arg &key title description url timestamp color author footer)
+  (declare (ignore title description url timestamp color author footer))
+  (declare ((or simple-string null) title description url timestampxs))
+  (declare ((or fixnum null) color))
+  (declare (list footer author))
+  (make-plist-for-embeds arg))
+
+(defun footer (text &rest arg &key icon_url proxy_icon_url)
+  (declare (ignore icon_url proxy_icon_url))
+  (declare (simple-string text))
+  (declare ((or simple-string null) icon_url proxy_icon_url))
+  (append `(:|text| ,text) (make-plist-for-embeds arg)))
+
+(defun author (name &rest arg &key url icon_url proxy_icon_url)
+  (declare (ignore url icon_url proxy_icon_url))
+  (declare (simple-string  name))
+  (declare ((or simple-string null) url icon_url proxy_icon_url))
+  (append `(:|name| ,name) (make-plist-for-embeds arg)))
+
+
+(defun make-embeds (content)
+  `(:|embeds| ,content))
+
+(defun make-payload (content embeds)
+  (append (make-content (or content ""))
+	  (make-embeds embeds)))
 
 
 
 
-(defun send-discord-message (channel-id content bot-token)
+
+(defun %send-discord-message (channel-id bot-token &key content embeds)
   "Discordの指定されたチャンネルにEmbedメッセージを送信する"
-  
-  (let* ((url (format nil "https://discord.com/api/v10/channels/~A/messages" channel-id))
-	 (headers (make-header bot-token "application/json"))
-	 (payload (jonathan:to-json (make-content content))))
 
-    (log:info "the sent message is: ~a~%" payload)
-    
+  (let ((url (format nil "https://discord.com/api/v10/channels/~A/messages" channel-id))
+	(headers (make-header bot-token "application/json"))
+	(payload (jonathan:to-json (make-payload content embeds))))
+
     (handler-case
-	(dex:post url
-		  :headers headers
-		  :content payload)
+	(drakma:http-request url
+			     :method :post
+			     :additional-headers headers
+			     :content payload
+			     :external-format-out :utf-8)
       (error (e)
 	(format t "Discord送信エラー: ~A~%" e)))
-    
+
     payload))
 
+(defmacro send-discord-message (channel-id bot-token &key content embeds)
+  (let ((list (cons 'list embeds)))
+    `(%send-discord-message ,channel-id ,bot-token :content ,content :embeds ,list)))
 
 
-;;;; ------------------------------------------------------------------
-;;;; defcommand
-;;;; ------------------------------------------------------------------
 
 
-(defcommand :post :post-message arg 
-  (let ((channel-id (first arg))
-	(content (second arg)))
-    (send-discord-message channel-id content *bot-token*)))
 
 
-;; sample
-;; (run-command (:post :post-message 1406525194289287311
-;; 		    ("hi" (:title "title"
-;; 			   :description "a"))))
+
 
