@@ -25,31 +25,9 @@
   "キーワードを受け取り、小文字化した新しいキーワードを返す"
   (intern (string-downcase (symbol-name keyword)) :keyword))
 
-<<<<<<< HEAD
-
-
-(defun make-embeds (plist)
-  "carにあるkeywordを小文字にする"
-  (when plist
-    (let ((x (car plist)))
-      (cons (if (keywordp x) (keyword-downcase x) x)
-	    (make-embeds (cdr plist))))))
-
-
-
-(defmethod %make-content ((content cons))
-  (let ((plists (mapcar #'make-embeds content)))
-    
-    (log:info "plists is ~s~%" plists)
-    
-    `(:|embeds| ,plists)))
-=======
 (defun make-plist-for-embeds (plist)
   (loop :for (key content) :on plist :by #'cddr 
 	:append (list (keyword-downcase key) content)))
->>>>>>> sub
-
-
 
 (defun embed (&rest arg &key title description url timestamp color author footer)
   (declare (ignore title description url timestamp color author footer))

@@ -21,14 +21,8 @@
 	       (:file "discord-bot-token")
 	       (:file "discord-bot-post")
 	       (:file "discord-bot-rss")
-<<<<<<< HEAD
-	       (:file "discord-bot-main"))
-  :entry-point "discord-bot-main:main")
-
-=======
 	       (:file "main"))
   :entry-point "discord-bot:main")
->>>>>>> sub
 
 
 

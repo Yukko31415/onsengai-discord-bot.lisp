@@ -1,14 +1,6 @@
 (in-package #:discord-bot-rss)
 
 
-<<<<<<< HEAD
-;;;; ------------------------------------------------------------------
-;;;; feedconfig
-;;;; ------------------------------------------------------------------
-=======
->>>>>>> sub
-
-
 
 ;;
 ;; config
@@ -27,16 +19,11 @@
 		   (user-homedir-pathname)))
 
 
-<<<<<<< HEAD
-(defparameter *key-queue* (make-queue))
-=======
 (rss-parser:define-rss-fetcher sandbox
   "http://scp-jp-sandbox3.wikidot.com/feed/pages/tags/%2B_criticism-in/category/draft/order/updated_at%20.xml"
   ("title" "pubDate" "description" "guid")
   :key "guid"
   :size *max-items*)
-
->>>>>>> sub
 
 (rss-parser:define-rss-fetcher wikidot-jp
   "http://scp-jp.wikidot.com/feed/pages/category/_default%2Cauthor%2Cprotected%2Cwanderers%2Ctheme%2Ccomponent%2Creference%2Cart/order/created_at%20desc/limit/20.xml"
@@ -132,11 +119,6 @@
 		(log:info "リトライを行います")
 		nil))))
 
-<<<<<<< HEAD
-;;;; ------------------------------------------------------------------
-;;;; feedconfig->item obj
-;;;; ------------------------------------------------------------------
-=======
 
 (defun loop-handler (rss-bot)
   (setf (rss-bot-activep rss-bot) t)
@@ -151,7 +133,6 @@
     (rss-loop rss-bot *interval*)))
 
 
->>>>>>> sub
 
 (defclass rss-bot ()
   ((activep :initform nil
@@ -159,33 +140,6 @@
    (enablep :initform nil
 	    :accessor rss-bot-enablep)))
 
-<<<<<<< HEAD
-
-(defclass item ()
-  ((title
-    :initarg :title :accessor item-title)
-   (url
-    :initarg :url :accessor item-url)
-   (description
-    :initarg :description :accessor item-description)
-   (timestamp
-    :initarg :timestamp :accessor item-timestamp)))
-
-
-
-(defgeneric make-itemobject-list (feedconfig)
-  (:documentation "feedconfigを受け取って、itemobjのリストを返す"))
-
-
-
-(defmacro feedconfig->itemobj ((feed-type url-for) &body body)
-  "feedconfigからitemobjを取り出すためのメソッド関数を生成するマクロ"
-  (let ((url-list (gensym)))
-    `(defmethod make-itemobject-list ((feedconfig ,feed-type))
-       (let ((,url-list (feedconfig-url-list feedconfig)))
-	 (loop for ,url-for in ,url-list
-	       append ,@body)))))
-=======
 
 ;; 
 ;; handler
@@ -194,7 +148,6 @@
 (defun make-rss-bot ()
   "rss-botインスタンスを生成する"
   (make-instance 'rss-bot))
->>>>>>> sub
 
 
 (defun stop (rss-bot)
@@ -213,185 +166,3 @@
 		:do (rss-parser:initialize-fetcher-cache
 		     fetcher (read stream))))
 	(bt:make-thread #'(lambda () (loop-handler rss-bot))))))
-
-
-
-<<<<<<< HEAD
-(feedconfig->itemobj (sandbox url)
-  (let* ((source (fetch-and-parse-from-xml url))
-	 (channel (find-content "channel" source))
-	 (items (remove-content-if-not '("item") channel))
-	 (item-list (extract-item-list
-		     '("title" "link" "pubDate" "encoded")
-		     items)))
-
-    (log:info "~a~%" items)
-
-    (mapcar #'(lambda (i)
-		(make-instance 'item
-			       :title (third (first i))
-			       :url (third (second i))
-			       :description (third (fourth i))
-			       :timestamp (third (third i))))
-	    item-list)))
-
-
-
-
-
-;;;; ------------------------------------------------------------------
-;;;; format-itemobj
-;;;; ------------------------------------------------------------------
-=======
->>>>>>> sub
-
-
-
-
-
-
-<<<<<<< HEAD
-
-(defmethod format-itemobj ((feedconfig wikidot-jp) itemobj)
-  (let ((color (feedconfig-color feedconfig))
-	(icon (feedconfig-icon feedconfig)))
-    (list (item-timestamp itemobj)
-	  (format-rss-message itemobj color icon ""))))
-
-
-(defmacro search-text-from-node (itemobj tag sub-sequences-list)
-  "指定したタグ内のテキストを探し、一致したものを返す"
-  (let* ((text (gensym))
-	 (node (gensym))
-	 (search-list
-	   (mapcar
-	    #'(lambda (sub-sequence) (list 'search sub-sequence text))
-	    sub-sequences-list)))
-    `(lquery:$ (initialize (item-description ,itemobj))
-       ,tag
-       (filter (lambda (,node)
-		 (let ((,text (plump:text ,node)))
-		   (or ,@search-list))))
-       (parent)
-       (text))))
-
-
-
-(defmethod format-itemobj ((feedconfig sandbox) itemobj)
-  (log:info "~a" (item-description itemobj))
-  (let* ((color (feedconfig-color feedconfig))
-	 (icon (feedconfig-icon feedconfig))
-	 (%description (search-text-from-node
-			itemobj "strong" ("付与予定タグ:" "付与予定タグ: ")))
-	 (description (let ((description (aref %description 0)))
-			(if (stringp description)
-			    description
-			    ""))))
-    
-    (list (item-timestamp itemobj)
-	  (format-rss-message itemobj color icon description))))
-
-
-
-
-;;;; ------------------------------------------------------------------
-;;;; send-rss-message-to-discord
-;;;; ------------------------------------------------------------------
-
-
-(defun add-data (key)
-  "新しいデータを追加し、上限を超えていれば最も古いデータを削除する"
-  ;; 新しいデータを追加
-  (setf (gethash key *seen-items*) key)
-  ;; 新しいキーをキューの末尾に追加
-  (push-queue key *key-queue*)
-  
-  ;; 上限を超えているかチェック
-  (loop
-    #:do (if (> (queue-count *key-queue*) *max-items*)
-	     ;; 超えていれば、一番古いデータを削除
-	     ;; キューの先頭から一番古いキーを取得
-	     (let ((oldest-key (pop-queue *key-queue*)))
-	       ;; ハッシュテーブルからそのキーのデータを削除
-	       (remhash oldest-key *seen-items*))
-	     (return))))
-
-
-(defun seen-items-p (key)
-  "urlをキーとして受け取り、それが既に送信したものかを確認する"
-  (when (gethash key *seen-items*) t))
-
-
-(defun send-rss-message-to-discord (channel feedconfig itemobj)
-  "seen-items-pがnilの時、メッセージを送信する"
-  (let ((url (item-url itemobj)))
-    (unless (seen-items-p url)
-      (progn (add-data url)
-	     (let ((message (format-itemobj feedconfig itemobj)))
-	       (run-command (:post :post-message channel message))
-	       (sleep 1))))))
-
-
-;;;; ------------------------------------------------------------------
-;;;; main
-;;;; ------------------------------------------------------------------
-
-
-
-(defun check-and-send-rss (feedconfig)
-  (let ((itemobj-list (make-itemobject-list feedconfig))
-	(channel (feedconfig-channel feedconfig)))
-    (mapc
-     #'(lambda (item)
-	 (send-rss-message-to-discord channel feedconfig item))
-     itemobj-list)))
-
-
-(defun main (feedconfig-list)
-  (mapc #'check-and-send-rss feedconfig-list))
-
-
-;;;; ------------------------------------------------------------------
-;;;; utils
-;;;; ------------------------------------------------------------------
-
-
-(defun output-key-plist-to-data (queue)
-  "現在のキューの中身を書き出す"
-  (format t "~%[ログ保存] 現在のキューをファイルに書き出します~%")
-  (with-open-file (out "~/common-lisp/discord-bot/data/rss-queue-list.txt"
-		       :direction :output
-		       :if-exists :supersede)
-    (let* ((queue-head (lparallel.raw-queue::head
-			(lparallel.cons-queue::%%%%.cons-queue.impl queue)))
-	   (queue-tail (lparallel.raw-queue::tail
-			(lparallel.cons-queue::%%%%.cons-queue.impl queue)))
-	   (copied-queue (append queue-head queue-tail)))
-      (format out "~s" copied-queue))))
-
-
-
-;;;; --------------------------------------------------------------
-;;;; bot-commands
-;;;; --------------------------------------------------------------
-
-
-
-(defcommand :rss :post arg
-  (main *feedconfig-list*))
-
-(defcommand :rss :save-queue arg
-  (output-key-plist-to-data *key-queue*))
-
-(defcommand :rss :initialize arg
-  (set-seen-items *queue-list-filepath*))
-
-;;;; test
-
-(defun test ()
-  (setf *key-queue* (make-queue))
-  (setf *seen-items* (make-hash-table :test 'equal))
-  (run-command (:rss :post)))
-
-=======
->>>>>>> sub
