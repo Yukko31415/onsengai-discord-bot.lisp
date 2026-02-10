@@ -107,7 +107,7 @@
 		       (run-rss)
 		       (when (= (mod times 5) 0)
 			 (with-open-file
-			     (stream *queue-list-filepath* :direction :output)
+			     (stream *queue-list-filepath* :direction :output :if-exists :supersede)
 			   (save-cache stream)))
 		       (sleep interval))
 	      (loop-finish ()
@@ -151,7 +151,7 @@
 
 
 (defun stop (rss-bot)
-  ""
+  "rss-botを停止する"
   (declare (rss-bot rss-bot))
   (setf  (rss-bot-enablep rss-bot) nil))
 
