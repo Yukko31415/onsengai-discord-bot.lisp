@@ -29,8 +29,6 @@
   (loop :for (key content) :on plist :by #'cddr 
 	:append (list (keyword-downcase key) content)))
 
-
-
 (defun embed (&rest arg &key title description url timestamp color author footer)
   (declare (ignore title description url timestamp color author footer))
   (declare ((or simple-string null) title description url timestampxs))

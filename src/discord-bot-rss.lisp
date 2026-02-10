@@ -2,8 +2,6 @@
 
 
 
-
-
 ;;
 ;; config
 
@@ -26,7 +24,6 @@
   ("title" "pubDate" "description" "guid")
   :key "guid"
   :size *max-items*)
-
 
 (rss-parser:define-rss-fetcher wikidot-jp
   "http://scp-jp.wikidot.com/feed/pages/category/_default%2Cauthor%2Cprotected%2Cwanderers%2Ctheme%2Ccomponent%2Creference%2Cart/order/created_at%20desc/limit/20.xml"
@@ -110,7 +107,7 @@
 		       (run-rss)
 		       (when (= (mod times 5) 0)
 			 (with-open-file
-			     (stream *queue-list-filepath* :direction :output)
+			     (stream *queue-list-filepath* :direction :output :if-exists :supersede)
 			   (save-cache stream)))
 		       (sleep interval))
 	      (loop-finish ()
@@ -154,7 +151,7 @@
 
 
 (defun stop (rss-bot)
-  ""
+  "rss-botを停止する"
   (declare (rss-bot rss-bot))
   (setf  (rss-bot-enablep rss-bot) nil))
 
@@ -169,12 +166,3 @@
 		:do (rss-parser:initialize-fetcher-cache
 		     fetcher (read stream))))
 	(bt:make-thread #'(lambda () (loop-handler rss-bot))))))
-
-
-
-
-
-
-
-
-
