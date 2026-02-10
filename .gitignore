@@ -1,8 +1,6 @@
 .DS_Store
 data/
-debug/
 discord-bot
-debug-output.xml
 rss-queue-list.txt
 token.txt
 discord-bot
