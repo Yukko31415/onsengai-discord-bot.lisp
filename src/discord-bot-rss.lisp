@@ -6,7 +6,7 @@
 ;; config
 
 
-(defparameter *channel-id* "1406525194289287311" "投稿先のDiscordチャンネルID")
+(defparameter *channel-id* "1121439803213365279" "投稿先のDiscordチャンネルID")
 
 (defvar *interval* 300 "RSSフィードのチェック間隔（秒）")
 
@@ -125,8 +125,7 @@
   (setf (rss-bot-activep rss-bot) t)
   (handler-bind ((start-fetch
 		   #'(lambda (c) (declare (ignore c))
-		       (if (rss-bot-enablep rss-bot)
-			   nil
+		       (unless (rss-bot-enablep rss-bot)
 			   (invoke-restart 'loop-finish))))
 		 (error
 		   #'(lambda (c) (log:warn "Error: ~a" c)
