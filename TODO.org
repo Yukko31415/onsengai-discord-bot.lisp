@@ -1,23 +1,24 @@
-* TODO [#C] postのembedの埋め込み可能な機能を増やしていく
-** TODO image?
+* TODO
+** TODO [#C] postのembedの埋め込み可能な機能を増やしていく
+*** TODO image?
  * url
  * proxy_url?
  * height?
  * width?
-** TODO thumbnail?
+*** TODO thumbnail?
  * url
  * proxy_url?
  * height?
  * width?
-** TODO video?
+*** TODO video?
  * url?
  * proxy_yrl?
  * height?
  * width?
-** TODO provider?
+*** TODO provider?
  * name?
  * url?
-** TODO fields?
+*** TODO fields?
  * name
  * value
  * include?
