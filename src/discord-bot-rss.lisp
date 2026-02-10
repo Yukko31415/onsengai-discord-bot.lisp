@@ -107,7 +107,8 @@
 		       (run-rss)
 		       (when (= (mod times 5) 0)
 			 (with-open-file
-			     (stream *queue-list-filepath* :direction :output :if-exists :supersede)
+			  (stream *queue-list-filepath* :direction :output
+							:if-exists :supersede)
 			   (save-cache stream)))
 		       (sleep interval))
 	      (loop-finish ()
@@ -158,11 +159,10 @@
 
 (defun run (rss-bot)
   (setf (rss-bot-enablep rss-bot) t)
-  (if (rss-bot-activep rss-bot)
-      nil
-      (progn
-	(with-open-file (stream *queue-list-filepath*)
-	  (loop :for fetcher :in *fetch-list*
-		:do (rss-parser:initialize-fetcher-cache
-		     fetcher (read stream))))
-	(bt:make-thread #'(lambda () (loop-handler rss-bot))))))
+  (unless (rss-bot-activep rss-bot)
+    (progn
+      (with-open-file (stream *queue-list-filepath*)
+	(loop :for fetcher :in *fetch-list*
+	      :do (rss-parser:initialize-fetcher-cache
+		   fetcher (read stream))))
+      (bt:make-thread #'(lambda () (loop-handler rss-bot))))))
