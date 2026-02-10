@@ -1,4 +1,4 @@
-* TODO
+* TODO.org
 ** TODO [#C] postのembedの埋め込み可能な機能を増やしていく
 *** TODO image?
  * url
