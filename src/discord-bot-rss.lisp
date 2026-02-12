@@ -6,7 +6,7 @@
 ;; config
 
 
-(defparameter *channel-id* "1121439803213365279" "投稿先のDiscordチャンネルID")
+(defparameter *channel-id* "1406525194289287311" "投稿先のDiscordチャンネルID")
 
 (defvar *interval* 300 "RSSフィードのチェック間隔（秒）")
 
@@ -40,18 +40,19 @@
 ;; post-item
 
 
-(defgeneric post-item (item))
+(defgeneric %post-item (item))
 
-(defmethod post-item :around (item)
+(defmethod %post-item :around (item)
   (sleep 1)
   (call-next-method))
 
 
-(defmethod post-item ((item sandbox))
+(defmethod %post-item ((item sandbox))
   (let ((title (title item))
 	(pubdate (pubdate item))
 	(description (description item))
 	(guid (guid item)))
+    (log:info "Post: [~a](~a)" title guid)
     (send-discord-message
      *channel-id* discord-bot-token:*bot-token*
      :content pubdate
@@ -63,11 +64,12 @@
 
 
 
-(defmethod post-item ((item wikidot-jp))
+(defmethod %post-item ((item wikidot-jp))
   (let ((title (title item))
 	(pubdate (pubdate item))
 	(description (description item))
 	(guid (guid item)))
+    (log:info "Post: [~a](~a)" title guid)
     (send-discord-message
      *channel-id* discord-bot-token:*bot-token*
      :content pubdate
@@ -78,10 +80,40 @@
 		     :footer (footer "RSS Bot"))))))
 
 
-(defun run-rss  ()
-  (mapcar #'post-item
-	  (nreverse (loop :for fetcher :in *fetch-list*
-			  :append (rss-parser:fetch fetcher)))))
+
+(defun post-item (queue &aux (count 0))
+  (bt:make-thread
+   (loop :for item := (lparallel.queue:pop-queue queue)
+	 :if (keywordp item)
+	   :do (ecase item
+		 (:start (incf count))
+		 (:end (decf count)))
+	 :until (zerop count)
+	 :do (%post-item item))))
+
+
+(defun %fetch-and-post (fetcher)
+  (loop (multiple-value-bind (val status)
+	    ;; status: nil -> retry, t -> finish
+	    (restart-case
+		(values (rss-parser:fetch fetcher) t)
+	      (retry () (log:info "リトライします") (values nil nil))
+	      (giveup () (log:info "諦めます") (values nil t)))
+	  (when status (return val)))))
+
+
+(defun fetch-and-post (fetcher queue)
+  (loop :initially (lparallel.queue:push-queue :start queue)
+	:for item :in (%fetch-and-post fetcher)
+	:do (lparallel.queue:push-queue item queue)
+	:finally (lparallel.queue:push-queue :end queue)))
+
+
+(defun run-rss ()
+  (loop :with queue := (lparallel.queue:make-queue)
+	:initially (post-item queue)
+	:for fetcher :in *fetch-list*
+	:do (bt:make-thread (fetch-and-post fetcher queue))))
 
 
 (defun save-cache (&optional stream)
@@ -92,45 +124,32 @@
 
 
 
-(define-condition start-fetch (condition)
-  ((times :initarg :times :reader fetch-times)))
+
 
 
 
 
 (defun rss-loop (rss-bot interval &aux (times 0))
   (declare (fixnum interval))
-  (loop :do (restart-case
-		(progn (incf times)
-		       (log:info "~A回目のループ" times)
-		       (signal 'start-fetch :times times)
-		       (run-rss)
-		       (when (= (mod times 5) 0)
-			 (with-open-file
-			  (stream *queue-list-filepath* :direction :output
-							:if-exists :supersede)
-			   (save-cache stream)))
-		       (sleep interval))
-	      (loop-finish ()
-		:report "メインループを終了する"
-		(log:info "ループを終了します")
-		(return (setf (rss-bot-activep rss-bot) nil)))
-	      (retry ()
-		:report "リトライを行う"
-		(log:info "リトライを行います")
-		nil))))
+  (declare (rss-bot rss-bot))
+  (loop :while (rss-bot-enablep rss-bot)
+	:do (progn (incf times)
+		   (log:info "~A回目のループ" times)
+		   (run-rss)
+		   (when (= (mod times 5) 0)
+		     (with-open-file
+			 (stream *queue-list-filepath* :direction :output
+						       :if-exists :supersede)
+		       (save-cache stream)))
+		   (sleep interval))))
 
 
 (defun loop-handler (rss-bot)
   (setf (rss-bot-activep rss-bot) t)
-  (handler-bind ((start-fetch
-		   #'(lambda (c) (declare (ignore c))
-		       (unless (rss-bot-enablep rss-bot)
-			   (invoke-restart 'loop-finish))))
-		 (error
-		   #'(lambda (c) (log:warn "Error: ~a" c)
-		       (invoke-restart 'retry))))
-    (rss-loop rss-bot *interval*)))
+  (handler-bind ((error #'(lambda (c) (log:warn "Error: ~a" c)
+			    (invoke-restart 'retry))))
+    (rss-loop rss-bot *interval*))
+  (setf (rss-bot-activep rss-bot) nil))
 
 
 
@@ -159,9 +178,8 @@
 (defun run (rss-bot)
   (setf (rss-bot-enablep rss-bot) t)
   (unless (rss-bot-activep rss-bot)
-    (progn
-      (with-open-file (stream *queue-list-filepath*)
-	(loop :for fetcher :in *fetch-list*
-	      :do (rss-parser:initialize-fetcher-cache
-		   fetcher (read stream))))
+    (progn (with-open-file (stream *queue-list-filepath*)
+	     (loop :for fetcher :in *fetch-list*
+		   :do (rss-parser:initialize-fetcher-cache
+			fetcher (read stream))))
       (bt:make-thread #'(lambda () (loop-handler rss-bot))))))
