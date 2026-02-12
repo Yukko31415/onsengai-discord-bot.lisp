@@ -1,7 +1,7 @@
 
 (asdf:defsystem "discord-bot"
   :description "this is a Discord bot for 温泉街"
-  :version "0.0.6"
+  :version "0.0.7"
   :author "yukko31415@gmail.com"
   :licence "Public Domain"
   :depends-on ("drakma"
@@ -12,7 +12,8 @@
 	       "bordeaux-threads"
 	       "slynk"
 	       "log4cl"
-	       "rss-parser")
+	       "rss-parser"
+	       "lparallel")
   :build-operation "program-op"
   :build-pathname "discord-bot"
   :pathname #p"src/"
@@ -23,5 +24,6 @@
 	       (:file "discord-bot-rss")
 	       (:file "main"))
   :entry-point "discord-bot:main")
+
 
 
