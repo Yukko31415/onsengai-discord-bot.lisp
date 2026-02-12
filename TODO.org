@@ -22,3 +22,9 @@
  * name
  * value
  * include?
+
+** TODO ログ出力を増やす
+*** TODO -rssの投稿される記事のguidをログとして出力できるようにする
+
+** TODO -rssのpost-itemの実装をfetcherでディスパッチするようにする
+ * fetcher-name関数を使ってディスパッチする
