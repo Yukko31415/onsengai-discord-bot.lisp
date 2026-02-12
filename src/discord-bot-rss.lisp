@@ -81,15 +81,15 @@
 
 
 
-(defun post-item (queue &aux (count 0))
-  (bt:make-thread
-   (loop :for item := (lparallel.queue:pop-queue queue)
-	 :if (keywordp item)
-	   :do (ecase item
-		 (:start (incf count))
-		 (:end (decf count)))
-	 :until (zerop count)
-	 :do (%post-item item))))
+(defun post-item (queue fetcher-amount)
+  (loop :with count := fetcher-amount
+	:for item := (lparallel.queue:pop-queue queue)
+	:if (keywordp item)
+	  :do (ecase item (:end (decf count)))
+	:else
+	  :do (%post-item item)
+	:until (zerop count)
+	:finally (log:info "post-item was closed")))
 
 
 (defun %fetch-and-post (fetcher)
@@ -103,17 +103,16 @@
 
 
 (defun fetch-and-post (fetcher queue)
-  (loop :initially (lparallel.queue:push-queue :start queue)
-	:for item :in (%fetch-and-post fetcher)
+  (loop :for item :in (%fetch-and-post fetcher)
 	:do (lparallel.queue:push-queue item queue)
 	:finally (lparallel.queue:push-queue :end queue)))
 
 
 (defun run-rss ()
   (loop :with queue := (lparallel.queue:make-queue)
-	:initially (post-item queue)
+	:initially (bt:make-thread #'(lambda () (post-item queue (length *fetch-list*))))
 	:for fetcher :in *fetch-list*
-	:do (bt:make-thread (fetch-and-post fetcher queue))))
+	:do (bt:make-thread #'(lambda () (fetch-and-post fetcher queue)))))
 
 
 (defun save-cache (&optional stream)
@@ -127,6 +126,13 @@
 
 
 
+
+
+(defclass rss-bot ()
+  ((activep :initform nil
+	    :accessor rss-bot-activep)
+   (enablep :initform nil
+	    :accessor rss-bot-enablep)))
 
 
 (defun rss-loop (rss-bot interval &aux (times 0))
@@ -144,20 +150,13 @@
 		   (sleep interval))))
 
 
+
 (defun loop-handler (rss-bot)
   (setf (rss-bot-activep rss-bot) t)
   (handler-bind ((error #'(lambda (c) (log:warn "Error: ~a" c)
 			    (invoke-restart 'retry))))
     (rss-loop rss-bot *interval*))
   (setf (rss-bot-activep rss-bot) nil))
-
-
-
-(defclass rss-bot ()
-  ((activep :initform nil
-	    :accessor rss-bot-activep)
-   (enablep :initform nil
-	    :accessor rss-bot-enablep)))
 
 
 ;; 
