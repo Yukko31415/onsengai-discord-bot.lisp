@@ -17,5 +17,6 @@
   (discord-bot-token:set-bot-token)
   (discord-bot-rss:run *rss-bot*))
 
-(eval-when (:load-toplevel)
-  (main))
+
+
+
