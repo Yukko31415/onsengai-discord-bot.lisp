@@ -93,7 +93,8 @@
   (loop (multiple-value-bind (val status)
 	    ;; status: nil -> retry, t -> finish
 	    (restart-case
-		(values (rss:fetch fetcher) t)
+		(progn (log:info "fetch for ~a" (rss:fetcher-name fetcher))
+		       (values (rss:fetch fetcher) t))
 	      (retry () (log:info "リトライします") (values nil nil))
 	      (giveup () (log:info "諦めます") (values nil t)))
 	  (when status (return val)))))
