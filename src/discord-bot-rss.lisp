@@ -42,10 +42,6 @@
 
 (defgeneric %post-item (item))
 
-(defmethod %post-item :around (item)
-  (sleep 1)
-  (call-next-method))
-
 
 (defmethod %post-item ((item sandbox))
   (let ((title (title item))
@@ -88,7 +84,7 @@
 	:if (keywordp item)
 	  :do (ecase item (:end (decf count)))
 	:else
-	  :do (%post-item item)
+	  :do (%post-item item) (sleep 1)
 	:until (zerop count)
 	:finally (log:info "post-item was closed")))
 
