@@ -6,7 +6,7 @@
 ;; config
 
 
-(defparameter *channel-id* "1406525194289287311" "投稿先のDiscordチャンネルID")
+(defparameter *channel-id* "1121439803213365279" "投稿先のDiscordチャンネルID")
 
 (defvar *interval* 300 "RSSフィードのチェック間隔（秒）")
 
@@ -81,6 +81,7 @@
 
 
 
+
 (defun post-item (queue fetcher-amount)
   (loop :with count := fetcher-amount
 	:for item := (lparallel.queue:pop-queue queue)
@@ -103,9 +104,10 @@
 
 
 (defun fetch-and-post (fetcher queue)
-  (loop :for item :in (%fetch-and-post fetcher)
-	:do (lparallel.queue:push-queue item queue)
-	:finally (lparallel.queue:push-queue :end queue)))
+  (handler-bind ((error #'(lambda (c) (log:warn "Error: ~a" c) (invoke-restart 'retry))))
+    (loop :for item :in (%fetch-and-post fetcher)
+	  :do (lparallel.queue:push-queue item queue)
+	  :finally (lparallel.queue:push-queue :end queue))))
 
 
 (defun run-rss ()
@@ -146,16 +148,15 @@
 		     (with-open-file
 			 (stream *queue-list-filepath* :direction :output
 						       :if-exists :supersede)
-		       (save-cache stream)))
+		       (save-cache stream))
+		     (log:info "cache was backuped"))
 		   (sleep interval))))
 
 
 
 (defun loop-handler (rss-bot)
   (setf (rss-bot-activep rss-bot) t)
-  (handler-bind ((error #'(lambda (c) (log:warn "Error: ~a" c)
-			    (invoke-restart 'retry))))
-    (rss-loop rss-bot *interval*))
+  (rss-loop rss-bot *interval*)
   (setf (rss-bot-activep rss-bot) nil))
 
 
