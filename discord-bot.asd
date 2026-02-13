@@ -12,7 +12,7 @@
 	       "bordeaux-threads"
 	       "slynk"
 	       "log4cl"
-	       "rss-parser"
+	       "cl-rss"
 	       "lparallel")
   :build-operation "program-op"
   :build-pathname "discord-bot"

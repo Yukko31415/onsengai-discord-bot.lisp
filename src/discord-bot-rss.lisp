@@ -19,19 +19,19 @@
 		   (user-homedir-pathname)))
 
 
-(rss-parser:define-rss-fetcher sandbox
+(rss:define-rss-fetcher sandbox
   "http://scp-jp-sandbox3.wikidot.com/feed/pages/tags/%2B_criticism-in/category/draft/order/updated_at%20.xml"
   ("title" "pubDate" "description" "guid")
   :key "guid"
   :size *max-items*)
 
-(rss-parser:define-rss-fetcher wikidot-jp
+(rss:define-rss-fetcher wikidot-jp
   "http://scp-jp.wikidot.com/feed/pages/category/_default%2Cauthor%2Cprotected%2Cwanderers%2Ctheme%2Ccomponent%2Creference%2Cart/order/created_at%20desc/limit/20.xml"
   ("title" "pubDate" "description" "guid")
   :key "guid"
   :size *max-items*)
 
-(defparameter *fetch-list* (mapcar #'rss-parser:make-rss-fetcher '(sandbox wikidot-jp)))
+(defparameter *fetch-list* (mapcar #'rss:make-rss-fetcher '(sandbox wikidot-jp)))
 
 
 
@@ -97,7 +97,7 @@
   (loop (multiple-value-bind (val status)
 	    ;; status: nil -> retry, t -> finish
 	    (restart-case
-		(values (rss-parser:fetch fetcher) t)
+		(values (rss:fetch fetcher) t)
 	      (retry () (log:info "リトライします") (values nil nil))
 	      (giveup () (log:info "諦めます") (values nil t)))
 	  (when status (return val)))))
@@ -120,7 +120,7 @@
 (defun save-cache (&optional stream)
   (let ((*print-readably* t))
     (flet ((print-cache (fetcher)
-	     (rss-parser:print-rss-cache-queue fetcher stream)))
+	     (rss:print-rss-cache-queue fetcher stream)))
       (mapc #'print-cache *fetch-list*))))
 
 
@@ -180,6 +180,6 @@
   (unless (rss-bot-activep rss-bot)
     (progn (with-open-file (stream *queue-list-filepath*)
 	     (loop :for fetcher :in *fetch-list*
-		   :do (rss-parser:initialize-fetcher-cache
+		   :do (rss:initialize-fetcher-cache
 			fetcher (read stream))))
       (bt:make-thread #'(lambda () (loop-handler rss-bot))))))
