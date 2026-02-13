@@ -19,19 +19,19 @@
 		   (user-homedir-pathname)))
 
 
-(rss:define-rss-fetcher sandbox
+(rss:define-fetcher sandbox
   "http://scp-jp-sandbox3.wikidot.com/feed/pages/tags/%2B_criticism-in/category/draft/order/updated_at%20.xml"
   ("title" "pubDate" "description" "guid")
   :key "guid"
   :size *max-items*)
 
-(rss:define-rss-fetcher wikidot-jp
+(rss:define-fetcher wikidot-jp
   "http://scp-jp.wikidot.com/feed/pages/category/_default%2Cauthor%2Cprotected%2Cwanderers%2Ctheme%2Ccomponent%2Creference%2Cart/order/created_at%20desc/limit/20.xml"
   ("title" "pubDate" "description" "guid")
   :key "guid"
   :size *max-items*)
 
-(defparameter *fetch-list* (mapcar #'rss:make-rss-fetcher '(sandbox wikidot-jp)))
+(defparameter *fetch-list* (mapcar #'rss:make-fetcher '(sandbox wikidot-jp)))
 
 
 
@@ -120,7 +120,7 @@
 (defun save-cache (&optional stream)
   (let ((*print-readably* t))
     (flet ((print-cache (fetcher)
-	     (rss:print-rss-cache-queue fetcher stream)))
+	     (rss:print-cache-queue fetcher stream)))
       (mapc #'print-cache *fetch-list*))))
 
 
