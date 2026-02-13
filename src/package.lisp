@@ -36,7 +36,8 @@
 (defpackage #:discord-bot-rss
   (:documentation "rss-botのメインロジック")
   (:use #:cl
-	#:discord-bot-post)
+	#:discord-bot-post
+	#:discord-bot-token)
 
   (:export #:run
 	   #:stop

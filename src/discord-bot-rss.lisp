@@ -54,7 +54,7 @@
 	(guid (guid item)))
     (log:info "Post: [~a](~a)" title guid)
     (send-discord-message
-     *channel-id* discord-bot-token:*bot-token*
+     *channel-id* *bot-token*
      :content pubdate
      :embeds ((embed :title (format nil "<:SB:1088712219656728657> ~A" title)
 		     :url guid
@@ -71,7 +71,7 @@
 	(guid (guid item)))
     (log:info "Post: [~a](~a)" title guid)
     (send-discord-message
-     *channel-id* discord-bot-token:*bot-token*
+     *channel-id* *bot-token*
      :content pubdate
      :embeds ((embed :title (format nil "<:Pos:1088712480865394700> ~A" title)
 		     :url guid
