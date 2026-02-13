@@ -31,7 +31,7 @@
 
 (defun embed (&rest arg &key title description url timestamp color author footer)
   (declare (ignore title description url timestamp color author footer))
-  (declare ((or simple-string null) title description url timestampxs))
+  (declare ((or simple-string null) title description url timestamp))
   (declare ((or fixnum null) color))
   (declare (list footer author))
   (make-plist-for-embeds arg))
