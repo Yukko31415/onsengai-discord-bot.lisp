@@ -93,7 +93,7 @@
   (loop (multiple-value-bind (val status)
 	    ;; status: nil -> retry, t -> finish
 	    (restart-case
-		(progn (log:info "fetch for ~a" (rss:fetcher-name fetcher))
+		(progn (log:info "fetch: ~a" (rss:fetcher-name fetcher))
 		       (values (rss:fetch fetcher) t))
 	      (retry () (log:info "リトライします") (values nil nil))
 	      (giveup () (log:info "諦めます") (values nil t)))
@@ -102,6 +102,7 @@
 
 (defun fetch-and-post (fetcher queue)
   (handler-bind ((error #'(lambda (c) (log:warn "Error: ~a" c) (invoke-restart 'retry))))
+    (log:info "run: ~a" (rss:fetcher-name fetcher))
     (loop :for item :in (%fetch-and-post fetcher)
 	  :do (lparallel.queue:push-queue item queue)
 	  :finally (lparallel.queue:push-queue :end queue))))
@@ -111,7 +112,8 @@
   (loop :with queue := (lparallel.queue:make-queue)
 	:initially (bt:make-thread #'(lambda () (post-item queue (length *fetch-list*))))
 	:for fetcher :in *fetch-list*
-	:do (bt:make-thread #'(lambda () (fetch-and-post fetcher queue)))))
+	:do (let ((fetcher fetcher))
+	      (bt:make-thread #'(lambda () (fetch-and-post fetcher queue))))))
 
 
 (defun save-cache (&optional stream)
@@ -119,9 +121,6 @@
     (flet ((print-cache (fetcher)
 	     (rss:print-cache-queue fetcher stream)))
       (mapc #'print-cache *fetch-list*))))
-
-
-
 
 
 
