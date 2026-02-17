@@ -1,7 +1,7 @@
 
 (asdf:defsystem "discord-bot"
   :description "this is a Discord bot for 温泉街"
-  :version "0.1.0"
+  :version "0.1.1"
   :author "yukko31415@gmail.com"
   :licence "Public Domain"
   :depends-on ("drakma"
