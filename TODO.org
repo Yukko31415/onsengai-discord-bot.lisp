@@ -23,8 +23,13 @@
  * value
  * include?
 
-** TODO ログ出力を増やす
-*** TODO -rssの投稿される記事のguidをログとして出力できるようにする
 
-** TODO -rssのpost-itemの実装をfetcherでディスパッチするようにする
+** DONE [#B] rssにアクセスできなかった場合の復帰方法をretry以外にも追加する
+ * retryした回数をカウントし、その回数に従うように待機時間を長くしていき、一定の回数を超えたタイミングでgiveupする
+
+** DONE ログ出力を増やす
+*** DONE -rssの投稿される記事のguidをログとして出力できるようにする
+
+** DONE -rssのpost-itemの実装をfetcherでディスパッチするようにする
  * fetcher-name関数を使ってディスパッチする
+ * 最終的に待機キュー方式にし、その必要がなくなった

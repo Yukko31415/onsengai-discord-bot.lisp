@@ -37,7 +37,7 @@
 
 
 ;;
-;; post-item
+;; %post-item
 
 
 (defgeneric %post-item (item))
@@ -49,8 +49,7 @@
 	(description (description item))
 	(guid (guid item)))
     (log:info "Post: [~a](~a)" title guid)
-    (send-discord-message
-     *channel-id* *bot-token*
+    (send-discord-message *channel-id* *bot-token*
      :content pubdate
      :embeds ((embed :title (format nil "<:SB:1088712219656728657> ~A" title)
 		     :url guid
@@ -66,8 +65,7 @@
 	(description (description item))
 	(guid (guid item)))
     (log:info "Post: [~a](~a)" title guid)
-    (send-discord-message
-     *channel-id* *bot-token*
+    (send-discord-message *channel-id* *bot-token*
      :content pubdate
      :embeds ((embed :title (format nil "<:Pos:1088712480865394700> ~A" title)
 		     :url guid
@@ -76,6 +74,8 @@
 		     :footer (footer "RSS Bot"))))))
 
 
+;;
+;; post-item
 
 
 (defun post-item (queue fetcher-amount)
@@ -89,23 +89,45 @@
 	:finally (log:info "post-item was closed")))
 
 
+;;
+;; fetch-and-post
+
+
+(defstruct (retry-counter (:conc-name nil))
+  (retry-counter 0 :type (integer 0 10)))
+
+
+
 (defun %fetch-and-post (fetcher)
   (loop (multiple-value-bind (val status)
 	    ;; status: nil -> retry, t -> finish
 	    (restart-case
 		(progn (log:info "fetch: ~a" (rss:fetcher-name fetcher))
 		       (values (rss:fetch fetcher) t))
-	      (retry () (log:info "リトライします") (values nil nil))
+	      (retry (counter) (log:info "retry: ~a" counter) (sleep (expt counter 2)) (values nil nil))
 	      (giveup () (log:info "諦めます") (values nil t)))
 	  (when status (return val)))))
 
 
+(defun fetch-and-post-handler (c retry-counter)
+  (log:warn "Error: ~a" c)
+  (let ((counter (retry-counter retry-counter)))
+    (if (>= 5 counter)
+	(invoke-restart 'retry counter)
+	(invoke-restart 'giveup))))
+
+
 (defun fetch-and-post (fetcher queue)
-  (handler-bind ((error #'(lambda (c) (log:warn "Error: ~a" c) (invoke-restart 'retry))))
-    (log:info "run: ~a" (rss:fetcher-name fetcher))
-    (loop :for item :in (%fetch-and-post fetcher)
-	  :do (lparallel.queue:push-queue item queue)
-	  :finally (lparallel.queue:push-queue :end queue))))
+  (log:info "run: ~a" (rss:fetcher-name fetcher))
+  (let ((retry-counter (make-retry-counter)))
+    (handler-bind ((error #'(lambda (c) (fetch-and-post-handler c retry-counter))))
+      (loop :for item :in (%fetch-and-post fetcher)
+	    :do (lparallel.queue:push-queue item queue)
+	    :finally (lparallel.queue:push-queue :end queue)))))
+
+
+;;
+;; run-rss
 
 
 (defun run-rss ()
@@ -116,14 +138,9 @@
 	      (bt:make-thread #'(lambda () (fetch-and-post fetcher queue))))))
 
 
-(defun save-cache (&optional stream)
-  (let ((*print-readably* t))
-    (flet ((print-cache (fetcher)
-	     (rss:print-cache-queue fetcher stream)))
-      (mapc #'print-cache *fetch-list*))))
 
-
-
+;;
+;; rss-loop
 
 
 (defclass rss-bot ()
@@ -133,7 +150,15 @@
 	    :accessor rss-bot-enablep)))
 
 
-(defun rss-loop (rss-bot interval &aux (times 0))
+(defun save-cache (&optional stream)
+  "streamにキャッシュを書き込む"
+  (let ((*print-readably* t))
+    (flet ((print-cache (fetcher)
+	     (rss:print-cache-queue fetcher stream)))
+      (mapc #'print-cache *fetch-list*))))
+
+
+(defun %rss-loop (rss-bot interval &aux (times 0))
   (declare (fixnum interval))
   (declare (rss-bot rss-bot))
   (loop :while (rss-bot-enablep rss-bot)
@@ -150,14 +175,14 @@
 
 
 
-(defun loop-handler (rss-bot)
+(defun rss-loop (rss-bot)
   (setf (rss-bot-activep rss-bot) t)
-  (rss-loop rss-bot *interval*)
+  (%rss-loop rss-bot *interval*)
   (setf (rss-bot-activep rss-bot) nil))
 
 
 ;; 
-;; handler
+;; bot-handler
 
 
 (defun make-rss-bot ()
@@ -178,4 +203,4 @@
 	     (loop :for fetcher :in *fetch-list*
 		   :do (rss:initialize-fetcher-cache
 			fetcher (read stream))))
-      (bt:make-thread #'(lambda () (loop-handler rss-bot))))))
+	   (bt:make-thread #'(lambda () (rss-loop rss-bot))))))

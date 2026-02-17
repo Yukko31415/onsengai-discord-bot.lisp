@@ -1,3 +1,5 @@
+acclimation, ghcr.io/ocicl/acclimation@sha256:f6f7b6782ea4fa53b86f23cf169f06f16a441000e5512955f0ef6ab065adbe4b, acclimation-20251218-9339b92/acclimation.asd
+acclimation-temperature, ghcr.io/ocicl/acclimation@sha256:f6f7b6782ea4fa53b86f23cf169f06f16a441000e5512955f0ef6ab065adbe4b, acclimation-20251218-9339b92/Temperature/acclimation-temperature.asd
 autoload, ghcr.io/ocicl/mgl-pax-bootstrap@sha256:3097eea0bea078a340bf34b3df4f3c8f5973f5a89369546d6ce031f28305d50e, mgl-pax-20260211-e83846f/autoload/autoload.asd
 babel, ghcr.io/ocicl/babel@sha256:9d9fcde71acc2b5c39572de4f11756a08c1d8801caa86c581b85dabaa35928b3, babel-20250905-4eaf3f2/babel.asd
 babel-streams, ghcr.io/ocicl/babel@sha256:9d9fcde71acc2b5c39572de4f11756a08c1d8801caa86c581b85dabaa35928b3, babel-20250905-4eaf3f2/babel-streams.asd
@@ -30,6 +32,10 @@ cl-unicode, ghcr.io/ocicl/cl-unicode@sha256:d98f12c1271fb3c1812a27d64dfbe95b0bc5
 cl-utilities, ghcr.io/ocicl/cl-utilities@sha256:e5e0676a4e0627332a0fe64d56ed4f1890f0466d715a11e8d95561b4c2baa38f, cl-utilities-20240503-6b4de39/cl-utilities.asd
 cl_plus_ssl, ghcr.io/ocicl/cl_plus_ssl@sha256:d50fbbba38827e835eec2415744e0fb05a2a0bf4d44940cdc23922f15036efe5, cl-plus-ssl-20251220-499b2f5/cl+ssl.asd
 cl_plus_ssl.test, ghcr.io/ocicl/cl_plus_ssl@sha256:d50fbbba38827e835eec2415744e0fb05a2a0bf4d44940cdc23922f15036efe5, cl-plus-ssl-20251220-499b2f5/cl+ssl.test.asd
+concrete-syntax-tree, ghcr.io/ocicl/concrete-syntax-tree@sha256:c2f5862bedb6571193449436c399ad9322fdb4f4092e0a0852987a5b846bd77e, Concrete-Syntax-Tree-20250822-f79dab6/concrete-syntax-tree.asd
+concrete-syntax-tree-destructuring, ghcr.io/ocicl/concrete-syntax-tree@sha256:c2f5862bedb6571193449436c399ad9322fdb4f4092e0a0852987a5b846bd77e, Concrete-Syntax-Tree-20250822-f79dab6/Destructuring/concrete-syntax-tree-destructuring.asd
+concrete-syntax-tree-lambda-list, ghcr.io/ocicl/concrete-syntax-tree@sha256:c2f5862bedb6571193449436c399ad9322fdb4f4092e0a0852987a5b846bd77e, Concrete-Syntax-Tree-20250822-f79dab6/Lambda-list/concrete-syntax-tree-lambda-list.asd
+concrete-syntax-tree-source-info, ghcr.io/ocicl/concrete-syntax-tree@sha256:c2f5862bedb6571193449436c399ad9322fdb4f4092e0a0852987a5b846bd77e, Concrete-Syntax-Tree-20250822-f79dab6/Source-info/concrete-syntax-tree-source-info.asd
 dexador, ghcr.io/ocicl/dexador@sha256:defc8d669790e22ac9a9eccf52fe14b10cf986402c7b32c0049df45f64a039e1, dexador-20250825-4db4b93/dexador.asd
 dexador-test, ghcr.io/ocicl/dexador@sha256:defc8d669790e22ac9a9eccf52fe14b10cf986402c7b32c0049df45f64a039e1, dexador-20250825-4db4b93/dexador-test.asd
 dexador-usocket, ghcr.io/ocicl/dexador@sha256:defc8d669790e22ac9a9eccf52fe14b10cf986402c7b32c0049df45f64a039e1, dexador-20250825-4db4b93/dexador-usocket.asd
@@ -38,12 +44,19 @@ drakma-test, ghcr.io/ocicl/drakma@sha256:2380396d821844cee463626c3b6e9b8c0a41632
 dref, ghcr.io/ocicl/mgl-pax-bootstrap@sha256:3097eea0bea078a340bf34b3df4f3c8f5973f5a89369546d6ce031f28305d50e, mgl-pax-20260211-e83846f/dref/dref.asd
 dref-test, ghcr.io/ocicl/mgl-pax-bootstrap@sha256:3097eea0bea078a340bf34b3df4f3c8f5973f5a89369546d6ce031f28305d50e, mgl-pax-20260211-e83846f/dref/dref-test.asd
 dref-test-package-inferred, ghcr.io/ocicl/mgl-pax-bootstrap@sha256:3097eea0bea078a340bf34b3df4f3c8f5973f5a89369546d6ce031f28305d50e, mgl-pax-20260211-e83846f/dref/test/data/dref-test-package-inferred.asd
+eclector, ghcr.io/ocicl/eclector@sha256:94f241b463feffde564d77a17a9d8381fe97d553900dbe36bac0c6a292269c1f, Eclector-20260128-b2b22cd/eclector.asd
+eclector-concrete-syntax-tree, ghcr.io/ocicl/eclector@sha256:94f241b463feffde564d77a17a9d8381fe97d553900dbe36bac0c6a292269c1f, Eclector-20260128-b2b22cd/eclector-concrete-syntax-tree.asd
+eclector.syntax-extensions, ghcr.io/ocicl/eclector@sha256:94f241b463feffde564d77a17a9d8381fe97d553900dbe36bac0c6a292269c1f, Eclector-20260128-b2b22cd/eclector.syntax-extensions.asd
 fast-http, ghcr.io/ocicl/fast-http@sha256:44e98b5239c0ded4921dc0b04ae272cff00583d93797a657543db782979eb50c, fast-http-20240503-2232fc9/fast-http.asd
 fast-http-test, ghcr.io/ocicl/fast-http@sha256:44e98b5239c0ded4921dc0b04ae272cff00583d93797a657543db782979eb50c, fast-http-20240503-2232fc9/fast-http-test.asd
 fast-io, ghcr.io/ocicl/fast-io@sha256:7ba35a0eddf00b3c25656b3c5a93e95460f6cb8f807afbc04ef4f50076d95aff, fast-io-20240503-a4c5ad6/fast-io.asd
 fast-io-test, ghcr.io/ocicl/fast-io@sha256:7ba35a0eddf00b3c25656b3c5a93e95460f6cb8f807afbc04ef4f50076d95aff, fast-io-20240503-a4c5ad6/fast-io-test.asd
+fiasco, ghcr.io/ocicl/fiasco@sha256:ce820a6d1a16bdfffdc2dbd82cbef2b438806b88e33affd1f7166b47b95c86cb, fiasco-20240503-bb47d2f/fiasco.asd
 flexi-streams, ghcr.io/ocicl/flexi-streams@sha256:95005b06a8a95c82780c75ead53810bcb273d07fcf5fe76b527f1856df9923f2, flexi-streams-20240503-4951d57/flexi-streams.asd
 flexi-streams-test, ghcr.io/ocicl/flexi-streams@sha256:95005b06a8a95c82780c75ead53810bcb273d07fcf5fe76b527f1856df9923f2, flexi-streams-20240503-4951d57/flexi-streams-test.asd
+float-features, ghcr.io/ocicl/float-features@sha256:64922efd92a08670cf8292ea56dfff29c577d36d8a7f7576cea0c031805c52d2, float-features-20250813-cd5dab0/float-features.asd
+float-features-tests, ghcr.io/ocicl/float-features@sha256:64922efd92a08670cf8292ea56dfff29c577d36d8a7f7576cea0c031805c52d2, float-features-20250813-cd5dab0/float-features-tests.asd
+fset, ghcr.io/ocicl/fset@sha256:06ed3b2b8e490fa5ddf01b23af08a5d0d5febf6633b982eab0f721f4cc3c8c15, fset-20251122-19eadf0/fset.asd
 idna, ghcr.io/ocicl/idna@sha256:b1737dbce42904f75c724350c3e057770c7777f1f5596c6358875dfb2e542eac, idna-20240503-bf789e6/idna.asd
 iolib, ghcr.io/ocicl/iolib@sha256:953f1cb142e647da50562d51eca562afc2c5b941b89ae622332b53c7dbed7e1b, iolib-20240503-396cc43/iolib.asd
 iolib.asdf, ghcr.io/ocicl/iolib@sha256:953f1cb142e647da50562d51eca562afc2c5b941b89ae622332b53c7dbed7e1b, iolib-20240503-396cc43/iolib.asdf.asd
@@ -61,6 +74,8 @@ mgl-pax, ghcr.io/ocicl/mgl-pax-bootstrap@sha256:3097eea0bea078a340bf34b3df4f3c8f
 mgl-pax-bootstrap, ghcr.io/ocicl/mgl-pax-bootstrap@sha256:3097eea0bea078a340bf34b3df4f3c8f5973f5a89369546d6ce031f28305d50e, mgl-pax-20260211-e83846f/mgl-pax-bootstrap.asd
 mgl-pax-test, ghcr.io/ocicl/mgl-pax-bootstrap@sha256:3097eea0bea078a340bf34b3df4f3c8f5973f5a89369546d6ce031f28305d50e, mgl-pax-20260211-e83846f/mgl-pax-test.asd
 mgl-pax.asdf, ghcr.io/ocicl/mgl-pax-bootstrap@sha256:3097eea0bea078a340bf34b3df4f3c8f5973f5a89369546d6ce031f28305d50e, mgl-pax-20260211-e83846f/mgl-pax.asdf.asd
+misc-extensions, ghcr.io/ocicl/misc-extensions@sha256:bffd02c8ba19a28ecc3b9a89a3e2639d51a6f856850b7c2cdfecb779738f53af, misc-extensions-20251202-9d0fd15/misc-extensions.asd
+mt19937, ghcr.io/ocicl/mt19937@sha256:49c0a25a535cd22212343c67e17635b8e05675ad9cc20aa75ce75e35e842bbe3, MT19937-20240503-78f0419/mt19937.asd
 named-readtables, ghcr.io/ocicl/named-readtables@sha256:cdfd96fd6f3c20f796f511fd2a92d3006261fe32daf6d7d1af868be9c72f273c, named-readtables-20260112-aa6dab5/named-readtables.asd
 named-readtables-test, ghcr.io/ocicl/named-readtables@sha256:cdfd96fd6f3c20f796f511fd2a92d3006261fe32daf6d7d1af868be9c72f273c, named-readtables-20260112-aa6dab5/named-readtables-test.asd
 proc-parse, ghcr.io/ocicl/proc-parse@sha256:0880f9acb35eb9efbe1f77a981e36e84e8f29a22b14f680c7686eb381fa87bd6, proc-parse-20240503-3afe2b7/proc-parse.asd
