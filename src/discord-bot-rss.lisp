@@ -121,7 +121,7 @@
   (log:info "run: ~a" (rss:fetcher-name fetcher))
   (let ((retry-counter (make-retry-counter)))
     (handler-bind ((error #'(lambda (c) (fetch-and-post-handler c retry-counter))))
-      (loop :for item :in (%fetch-and-post fetcher)
+      (loop :for item :in (nreverse (%fetch-and-post fetcher))
 	    :do (lparallel.queue:push-queue item queue)
 	    :finally (lparallel.queue:push-queue :end queue)))))
 
@@ -203,4 +203,5 @@
 	     (loop :for fetcher :in *fetch-list*
 		   :do (rss:initialize-fetcher-cache
 			fetcher (read stream))))
+	   (log:info "chace was initialized")
 	   (bt:make-thread #'(lambda () (rss-loop rss-bot))))))
