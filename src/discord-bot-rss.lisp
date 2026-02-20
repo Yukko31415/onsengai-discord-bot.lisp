@@ -94,7 +94,7 @@
 
 
 (defstruct (retry-counter (:conc-name nil))
-  (retry-counter 0 :type (integer 0 10)))
+  (retry-count 0 :type (integer 0 10)))
 
 
 
@@ -104,17 +104,19 @@
 	    (restart-case
 		(progn (log:info "fetch: ~a" (rss:fetcher-name fetcher))
 		       (values (rss:fetch fetcher) t))
-	      (retry (counter) (log:info "retry: ~a" counter) (sleep (expt counter 2)) (values nil nil))
+	      (retry (count) (log:info "retry: ~a" count) (sleep (* (expt count 2) 10)) (values nil nil))
 	      (giveup () (log:info "諦めます") (values nil t)))
 	  (when status (return val)))))
 
 
 (defun fetch-and-post-handler (c retry-counter)
   (log:warn "Error: ~a" c)
-  (let ((counter (retry-counter retry-counter)))
-    (if (>= 5 counter)
-	(invoke-restart 'retry counter)
+  (let ((counter (retry-count retry-counter)))
+    (if (>= 3 counter)
+	(progn (incf (retry-count retry-counter))
+	       (invoke-restart 'retry counter))
 	(invoke-restart 'giveup))))
+
 
 
 (defun fetch-and-post (fetcher queue)
