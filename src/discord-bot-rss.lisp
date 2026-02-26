@@ -97,7 +97,6 @@
   (retry-count 0 :type (integer 0 10)))
 
 
-
 (defun %fetch-and-post (fetcher)
   (loop (multiple-value-bind (val status)
 	    ;; status: nil -> retry, t -> finish
@@ -105,16 +104,17 @@
 		(progn (log:info "fetch: ~a" (rss:fetcher-name fetcher))
 		       (values (rss:fetch fetcher) t))
 	      (retry (count) (log:info "retry: ~a" count) (sleep (* (expt count 2) 10)) (values nil nil))
-	      (giveup () (log:info "諦めます") (values nil t)))
+	      (giveup () (log:info "fetch was gived up") (values nil t)))
 	  (when status (return val)))))
 
 
 (defun fetch-and-post-handler (c retry-counter)
   (log:warn "Error: ~a" c)
-  (let ((counter (retry-count retry-counter)))
-    (if (>= 3 counter)
-	(progn (incf (retry-count retry-counter))
-	       (invoke-restart 'retry counter))
+  (let* ((counter retry-counter)
+	 (count (retry-count counter)))
+    (if (> 3 count)
+	(progn (incf (retry-count counter))
+	       (invoke-restart 'retry (retry-count counter)))
 	(invoke-restart 'giveup))))
 
 
